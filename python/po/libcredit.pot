@@ -1,0 +1,39 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-10-21 12:48+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../libcredit/__init__.py:111
+msgid "Untitled work"
+msgstr ""
+
+#: ../libcredit/__init__.py:115 ../libcredit/__init__.py:121
+#: ../libcredit/__init__.py:128 ../libcredit/__init__.py:133
+msgid " by "
+msgstr ""
+
+#: ../libcredit/__init__.py:141
+msgid " Licensed under "
+msgstr ""
+
+#: ../libcredit/__init__.py:153
+msgid " license"
+msgstr ""
+
+#: ../libcredit/__init__.py:195
+msgid " Source works:"
+msgstr ""
