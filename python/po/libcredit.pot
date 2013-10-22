@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-10-21 12:48+0700\n"
+"POT-Creation-Date: 2013-10-22 14:21+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,23 +17,41 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../libcredit/__init__.py:111
-msgid "Untitled work"
+#: ../libcredit/__init__.py:33
+msgid ""
+"<credit><title/> by <attrib/>, licensed under <license/> license.</credit>"
 msgstr ""
 
-#: ../libcredit/__init__.py:115 ../libcredit/__init__.py:121
-#: ../libcredit/__init__.py:128 ../libcredit/__init__.py:133
-msgid " by "
+#: ../libcredit/__init__.py:34
+msgid "<credit><title/> by <attrib/>.</credit>"
 msgstr ""
 
-#: ../libcredit/__init__.py:141
-msgid " Licensed under "
+#: ../libcredit/__init__.py:35
+msgid "<credit><title/>, licensed under <license /> license.</credit>"
 msgstr ""
 
-#: ../libcredit/__init__.py:153
-msgid " license"
+#: ../libcredit/__init__.py:36
+msgid "<credit><title/>.</credit>"
 msgstr ""
 
-#: ../libcredit/__init__.py:195
-msgid " Source works:"
+#: ../libcredit/__init__.py:37
+msgid ""
+"<credit>Untitled work by <attrib/>, licensed under <license/> license.</"
+"credit>"
+msgstr ""
+
+#: ../libcredit/__init__.py:38
+msgid "<credit>Untitled work by <attrib/>.</credit>"
+msgstr ""
+
+#: ../libcredit/__init__.py:39
+msgid "<credit>Untitled work, licensed under <license/> license.</credit>"
+msgstr ""
+
+#: ../libcredit/__init__.py:40
+msgid "<credit>Untitled work.</credit>"
+msgstr ""
+
+#: ../libcredit/__init__.py:152
+msgid "Source works:"
 msgstr ""
