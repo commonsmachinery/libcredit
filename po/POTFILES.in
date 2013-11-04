@@ -1,0 +1,10 @@
+# This file is deliberately empty.
+
+# Since we share language strings between the programming language
+# versions, and there's not that many strings to start with, it
+# doesn't make much sense to auto-generate the libcredit.pot file.
+
+[encoding: UTF-8]
+
+# Uncomment if you _do_ want to generate a libcredit.pot
+# python/libcredit/__init__.py

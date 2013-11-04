@@ -7,6 +7,7 @@ setup(
     name='libcredit',
     version='0.1',
     packages=['libcredit'],
+    package_dir = { '': 'python' },
     cmdclass={
         "build": build_extra.build_extra,
         "build_i18n": build_i18n.build_i18n,
