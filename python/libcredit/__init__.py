@@ -10,22 +10,41 @@
 import sys
 import gettext
 import rdflib
+import urlparse
 import xml.parsers.expat
 from xml.dom import minidom
+
 
 try:
     gettext.install('libcredit', sys.prefix + '/share/locale')
 except IOError:
     _ = lambda s: s
 
-license_labels = {
-    "http://creativecommons.org/licenses/by/3.0/": "CC BY 3.0",
-    "http://creativecommons.org/licenses/by-nc/3.0/": "CC BY-NC 3.0",
-    "http://creativecommons.org/licenses/by-nc-nd/3.0/": "CC BY-NC-ND 3.0",
-    "http://creativecommons.org/licenses/by-nc-sa/3.0/": "CC BY-NC-SA 3.0",
-    "http://creativecommons.org/licenses/by-nd/3.0/": "CC BY-ND 3.0",
-    "http://creativecommons.org/licenses/by-sa/3.0/": "CC BY-SA 3.0",
-}
+def get_license_label(url):
+    scheme, netloc, path = urlparse.urlparse(url)[:3]
+    label = None
+    if netloc == "creativecommons.org":
+        if path == "/publicdomain/zero/1.0/":
+            label = "Public Domain"
+        elif path.startswith("/licenses"):
+            path = path.split('/')
+            label = "CC %s %s %s" % (
+                path[2].upper(),
+                path[3],
+                "(%s)" % path[4].upper() if len(path) > 5 else "Unported"
+            )
+    elif netloc == "artlibre.org":
+        label = {
+            "/licence/lal": "Licence Art Libre",
+            "/licence/lal/en": "Free Art License 1.3",
+            "http://artlibre.org/licence/lal/de": "Lizenz Freie Kunst",
+            "http://artlibre.org/licence/lal/es": "Licencia Arte Libre",
+            "http://artlibre.org/licence/lal/pt": "Licença da Arte Livre 1.3",
+            "http://artlibre.org/licence/lal/it": "Licenza Arte Libera",
+            "http://artlibre.org/licence/lal/pl": "Licencja Wolnej Sztuki 1.3",
+            "/licence/lal/licence-art-libre-12": "Licence Art Libre 1.2",
+        }[path]
+    return label
 
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
@@ -140,9 +159,8 @@ class Credit:
                 formatter.add_attrib(str(self.attributionName), str(self.attributionURL))
             elif name == 'license':
                 license_url = str(self.license)
-                if license_url in license_labels:
-                    license_label = license_labels[license_url]
-                else:
+                license_label = get_license_label(license_url)
+                if license_label is None:
                     license_label = license_url
                 formatter.add_license(license_label, license_url)
 
