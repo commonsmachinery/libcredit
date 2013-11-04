@@ -126,6 +126,31 @@ class Credit:
         self.attributionName = result.attributionName
         self.attributionURL = result.attributionURL
 
+        # flickr specials
+        # flickr_photos:by is used by flickr for the same purpose as attribution URL
+        # twitter:creator is the only property that says something about the author
+        if urlparse.urlparse(str(work_uri))[1] == "www.flickr.com":
+            try:
+                flickr_by = next(g[work_uri:rdflib.term.URIRef(u'flickr_photos:by')])
+            except StopIteration:
+                flickr_by = None
+
+            # use twitter:creator as the author's name
+            try:
+                flickr_creator = next(g[work_uri:rdflib.term.URIRef(u'twitter:creator')])
+            except StopIteration:
+                flickr_creator = None
+
+            # or just use /people/XXX/ as the last resort
+            if flickr_by and flickr_creator is None:
+                flickr_creator = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
+
+            if self.attributionName is None:
+                self.attributionName = flickr_creator
+
+            if self.attributionURL is None:
+                self.attributionURL = flickr_by
+
         self.sources = []
 
         query = SOURCE_QUERY_FORMAT % {"query_base": query_uri}
