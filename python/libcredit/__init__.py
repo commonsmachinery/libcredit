@@ -49,14 +49,14 @@ def get_license_label(url):
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
 CREDIT_MARKUP = {
-    (True, True, True):     _("<credit><title/> by <attrib/>, licensed under <license/> license.</credit>"),
-    (True, True, False):    _("<credit><title/> by <attrib/>.</credit>"),
-    (True, False, True):    _("<credit><title/>, licensed under <license /> license.</credit>"),
-    (True, False, False):   _("<credit><title/>.</credit>"),
-    (False, True, True):    _("<credit>Untitled work by <attrib/>, licensed under <license/> license.</credit>"),
-    (False, True, False):   _("<credit>Untitled work by <attrib/>.</credit>"),
-    (False, False, True):   _("<credit>Untitled work, licensed under <license/> license.</credit>"),
-    (False, False, False):  _("<credit>Untitled work.</credit>"),
+    (True, True, True):     _("<credit><title/> by <attrib/> (<license/>)</credit>"),
+    (True, True, False):    _("<credit><title/> by <attrib/></credit>"),
+    (True, False, True):    _("<credit><title/> (<license/>)</credit>"),
+    (True, False, False):   _("<credit><title/></credit>"),
+    (False, True, True):    _("<credit>Credit: <attrib/> (<license/>)</credit>"),
+    (False, True, False):   _("<credit>Credit: <attrib/></credit>"),
+    (False, False, True):   _("<credit>License: <license/></credit>"),
+    (False, False, False):  None,
 }
 
 WORK_QUERY_FORMAT = """
@@ -171,6 +171,9 @@ class Credit:
             self.license is not None
         )]
 
+        if not markup:
+            return # TODO: raise an exception instead?
+        
         # handler functions
         def start_element(name, attrs):
             if name == 'credit':
@@ -189,7 +192,7 @@ class Credit:
         def end_element(name):
             if name == 'credit':
                 if self.sources and source_depth != 0:
-                    formatter.begin_sources(_("Source works:"))
+                    formatter.begin_sources(_("Sources:"))
                     for s in self.sources:
                         formatter.begin_source()
                         s.format(formatter, source_depth - 1)
@@ -273,6 +276,7 @@ class TextCreditFormatter(CreditFormatter):
 class HTMLCreditFormatter(CreditFormatter):
     def __init__(self):
         self.doc = minidom.Document()
+        self.root = None
         self.node_stack = []
         self.depth = 0
 
@@ -336,4 +340,18 @@ class HTMLCreditFormatter(CreditFormatter):
         self.node_stack[-1].appendChild(self.doc.createTextNode(text))
 
     def get_text(self):
-        return self.root.toprettyxml(indent="  ")
+        if self.root:
+            return self.root.toxml()
+        else:
+            return u''
+
+
+if __name__ == '__main__':
+    c = Credit(sys.stdin.read())
+    f = HTMLCreditFormatter()
+    c.format(f)
+    t = f.get_text()
+    if t:
+        sys.stdout.write(t + '\n')
+    else:
+        sys.exit('no credit\n')
