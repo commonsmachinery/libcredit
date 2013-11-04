@@ -37,11 +37,11 @@ def get_license_label(url):
         label = {
             "/licence/lal": "Licence Art Libre",
             "/licence/lal/en": "Free Art License 1.3",
-            "http://artlibre.org/licence/lal/de": "Lizenz Freie Kunst",
-            "http://artlibre.org/licence/lal/es": "Licencia Arte Libre",
-            "http://artlibre.org/licence/lal/pt": "Licença da Arte Livre 1.3",
-            "http://artlibre.org/licence/lal/it": "Licenza Arte Libera",
-            "http://artlibre.org/licence/lal/pl": "Licencja Wolnej Sztuki 1.3",
+            "/licence/lal/de": "Lizenz Freie Kunst",
+            "/licence/lal/es": "Licencia Arte Libre",
+            "/licence/lal/pt": "Licença da Arte Livre 1.3",
+            "/licence/lal/it": "Licenza Arte Libera",
+            "/licence/lal/pl": "Licencja Wolnej Sztuki 1.3",
             "/licence/lal/licence-art-libre-12": "Licence Art Libre 1.2",
         }[path]
     return label
@@ -64,6 +64,7 @@ WORK_QUERY_FORMAT = """
     PREFIX dcterms: <http://purl.org/dc/terms/>
     PREFIX cc: <http://creativecommons.org/ns#>
     PREFIX xhv: <http://www.w3.org/1999/xhtml/vocab#>
+    PREFIX twitter: <twitter:>
 
     SELECT ?title ?attributionURL ?attributionName ?creator ?license
     WHERE {
@@ -77,7 +78,8 @@ WORK_QUERY_FORMAT = """
 
         OPTIONAL {
             { <%(query_base)s> dc:creator ?creator } UNION 
-            { <%(query_base)s> dcterms:creator ?creator }
+            { <%(query_base)s> dcterms:creator ?creator } UNION
+            { <%(query_base)s> twitter:creator ?creator }  
         }
 
         OPTIONAL {
@@ -126,27 +128,22 @@ class Credit:
         self.attributionName = result.attributionName
         self.attributionURL = result.attributionURL
 
+        if self.attributionName is None:
+            self.attributionName = self.creator
+
         # flickr specials
         # flickr_photos:by is used by flickr for the same purpose as attribution URL
-        # twitter:creator is the only property that says something about the author
         if urlparse.urlparse(str(work_uri))[1] == "www.flickr.com":
             try:
                 flickr_by = next(g[work_uri:rdflib.term.URIRef(u'flickr_photos:by')])
             except StopIteration:
                 flickr_by = None
 
-            # use twitter:creator as the author's name
-            try:
-                flickr_creator = next(g[work_uri:rdflib.term.URIRef(u'twitter:creator')])
-            except StopIteration:
-                flickr_creator = None
-
-            # or just use /people/XXX/ as the last resort
-            if flickr_by and flickr_creator is None:
-                flickr_creator = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
+            # could we just use /people/XXX/ as the last resort?
+            # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
             if self.attributionName is None:
-                self.attributionName = flickr_creator
+                self.attributionName = flickr_by
 
             if self.attributionURL is None:
                 self.attributionURL = flickr_by
