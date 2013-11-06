@@ -10,10 +10,13 @@
 import sys
 import gettext
 import rdflib
-import urlparse
 import xml.parsers.expat
 from xml.dom import minidom
 
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
 
 try:
     gettext.install('libcredit', sys.prefix + '/share/locale')
@@ -133,9 +136,9 @@ class Credit:
 
         # flickr specials
         # flickr_photos:by is used by flickr for the same purpose as attribution URL
-        if urlparse.urlparse(str(work_uri))[1] == "www.flickr.com":
+        if urlparse.urlparse(str(query_uri))[1] == "www.flickr.com":
             try:
-                flickr_by = next(g[work_uri:rdflib.term.URIRef(u'flickr_photos:by')])
+                flickr_by = next(g[query_uri:rdflib.term.URIRef(u'flickr_photos:by')])
             except StopIteration:
                 flickr_by = None
 
