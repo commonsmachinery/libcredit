@@ -2,6 +2,6 @@
 
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 
-<> <dc:source> <urn:source> .
-<urn:source> <dc:title> "a title" .
+<> dc:source <urn:src> .
+<urn:src> dc:title "a title" .
 
