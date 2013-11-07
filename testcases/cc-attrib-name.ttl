@@ -1,0 +1,7 @@
+# cc-attrib-name: just attributionName, no URL
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+
+<> dc:source <urn:src> .
+<urn:src> cc:attributionName "name of attribution" .

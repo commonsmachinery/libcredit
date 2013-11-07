@@ -1,0 +1,6 @@
+# dc-title-url: not title, but a useful source URL so use that
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<> dc:source <http://test/> .
+

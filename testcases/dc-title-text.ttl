@@ -1,7 +1,12 @@
 # dc-title-text: just a title, no useful source URL
+#
+# dc:title has precedence over other titles.
 
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix og: <http://ogp.me/ns#> .
 
 <> dc:source <urn:src> .
-<urn:src> dc:title "a title" .
+<urn:src>
+  og:title "not used" ;
+  dc:title "a title" .
 

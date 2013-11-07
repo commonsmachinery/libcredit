@@ -1,0 +1,10 @@
+# dc-creator-text: creator as text, not URL
+
+# dc:title has precedence over other creator 
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<> dc:source <urn:src> .
+<urn:src>
+  <twitter:creator> "@unused" ;
+  dc:creator "A N Other" .

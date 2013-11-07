@@ -1,0 +1,6 @@
+# twitter-creator: creator as twitter handle
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<> dc:source <urn:src> .
+<urn:src> <twitter:creator> "@tweeter" .

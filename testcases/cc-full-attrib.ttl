@@ -1,0 +1,12 @@
+# cc-full-attrib: A complete by-the-book CC attribution.
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix xhv: <http://www.w3.org/1999/xhtml/vocab#> .
+
+<> dc:source <http://src/> .
+<http://src/>
+  dc:title "a title" ;
+  cc:attributionName "name of attribution" ;
+  cc:attributionURL <http://attrib/> ;
+  xhv:license <http://creativecommons.org/licenses/by-sa/3.0/> .

@@ -120,13 +120,56 @@
 	});
     });
 
+    describe('License names', function () {
+	expect( libcredit.getLicenseName(
+	    'http://creativecommons.org/licenses/by-sa/3.0/') ).to.be(
+		'CC-BY-SA 3.0 Unported'
+	    );
+		
+	expect( libcredit.getLicenseName(
+	    'http://creativecommons.org/licenses/by-nc/2.5/deed.en') ).to.be(
+		'CC-BY-NC 2.5 Unported'
+	    );
+		
+	expect( libcredit.getLicenseName(
+	    'http://creativecommons.org/licenses/by/3.0/au/deed.en_US') ).to.be(
+		'CC-BY 3.0 (AU)'
+	    );
+    });		
+	
     describe('Pure Dublin Core', function () {
-
+	// By using urn:src we avoid getting a title from the source
+	// URI
 	testCredit('nothing', 'urn:src', function (credit) {
 	    expect( credit ).to.be( null );
 	});
 
 	testCreditOutput('dc-title-text', 'urn:src');
+	testCreditOutput('dc-title-url', 'http://test/');
+	testCreditOutput('dc-creator-text', 'urn:src');
+	testCreditOutput('dc-creator-url', 'urn:src');
+	testCreditOutput('dc-rights', 'urn:src');
+    });
+
+    describe('ccREL', function () {
+	testCreditOutput('cc-attrib-name', 'urn:src');
+	testCreditOutput('cc-attrib-url', 'urn:src');
+	testCreditOutput('cc-attrib-both', 'urn:src');
+	testCreditOutput('cc-license', 'urn:src');
+	testCreditOutput('cc-full-attrib', 'http://src/');
+    });
+
+    describe('License text', function () {
+	testCreditOutput('xhtml-license-text', 'urn:src');
+    });
+
+    describe('Open Graph', function () {
+	testCreditOutput('og-title', 'urn:src');
+	testCreditOutput('og-url', 'http://src/');
+    });
+
+    describe('Twitter', function () {
+	testCreditOutput('twitter-creator', 'urn:src');
     });
 
 })(libcredit);

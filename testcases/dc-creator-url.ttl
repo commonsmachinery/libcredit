@@ -1,0 +1,6 @@
+# dc-creator-url: creator as an URL
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<> dc:source <urn:src> .
+<urn:src> dc:creator <http://creator/> .

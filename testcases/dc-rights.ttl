@@ -1,0 +1,12 @@
+# dc-rights: plain-text rights statement
+#
+# dc:rights has precedence over other license sources
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix xhv: <http://www.w3.org/1999/xhtml/vocab#> .
+
+<> dc:source <urn:src> .
+<urn:src>
+  xhv:license "not used" ;
+  dc:rights "Copyright 2013" .
+

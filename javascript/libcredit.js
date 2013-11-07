@@ -48,9 +48,81 @@
     };
 
 
+    const ccLicenseURL = /^https?:\/\/creativecommons.org\/licenses\/([-a-z]+)\/([0-9.]+)\/(?:([a-z]+)\/)?(?:deed\..*)?$/;
+    
+    var getTextProperty = function(kb, subject, predicate) {
+	var objs, i;
+
+	objs = kb.each(subject, predicate, null);
+	
+	for (i = 0; i < objs.length; i++) {
+	    if (objs[i].termType === 'literal') {
+		// TODO: check xml:lang
+		return objs[i].value;
+	    }
+	    else if (objs[i].termType === 'symbol') {
+		return objs[i].uri;
+	    }
+	    // TODO: parse rdf:Alt 
+	}
+
+	return null;
+    };
+
+    var getURLProperty = function(kb, subject, predicate) {
+	var obj = kb.any(subject, predicate, null);
+
+	if (!obj) return null;
+	
+	if (obj.termType === 'symbol') {
+	    // Assume they know what they're doing and use the URL
+	    // as-is
+	    return obj.uri;
+	}
+	else if (obj.termType === 'literal') {
+	    // Use this if it seems to be an URL
+	    return getURL(obj.value);
+	}
+
+	return null;
+    };
+
+    const urlRE = /^https?:/;
+
+    // Return uri if it can be used as a URL
+    var getURL = function(uri) {
+	return urlRE.test(uri) ? uri : null;
+    }
+
+
     //
     // Public API
     //
+
+    /* getLicenseName(url)
+     *
+     * Return a human-readable short name for a license.
+     * If the URL is unknown, it is returned as-is.
+     *
+     * Parameters:
+     *
+     * - url: the license URL
+     **/
+    var getLicenseName = function(url) {
+	var m, text;
+	
+	m = url.match(ccLicenseURL);
+	if (m) {
+	    text = 'CC-';
+	    text += m[1].toUpperCase();
+	    text += ' ';
+	    text += m[2];
+	    text += m[3] ? ' (' + m[3].toUpperCase() + ')' : ' Unported';
+	}
+
+	return text ? text : url;
+    };
+    libcredit.getLicenseName = getLicenseName;
 
     /* credit(rdf, [subjectURI])
      *
@@ -79,22 +151,6 @@
 	var licenseURL = null;
 	var sources = [];
 
-	var getTextProperty = function(subject, predicate) {
-	    var objs, i;
-
-	    objs = kb.each(subject, predicate, null);
-	    
-	    for (i = 0; i < objs.length; i++) {
-		if (objs[i].termType === 'literal') {
-		    // TODO: check xml:lang
-		    return objs[i].value;
-		}
-		// TODO: parse rdf:Alt 
-	    }
-
-	    return null;
-	};
-
 	// Make scope a little cleaner by putting the parsing into
 	// it's own function
 
@@ -120,7 +176,71 @@
 		subject = kb.sym(subjectURI);
 	    }
 
-	    titleText = getTextProperty(subject, DC('title'));
+	    //
+	    // Title
+	    //
+	    
+	    titleText = getTextProperty(kb, subject, DC('title'));
+
+	    if (!titleText) {
+		// Try Open Graph
+		titleText = getTextProperty(kb, subject, OG('title'));
+	    }
+
+	    // An Open Graph URL is probably a very good URL to use
+	    titleURL = getURLProperty(kb, subject, OG('url'));
+
+	    if (!titleURL) {
+		// If nothing else, try to use the subject URI
+		titleURL = getURL(subject.uri);
+	    }
+
+	    if (!titleText) {
+		// Fall back on URL
+		titleText = titleURL;
+	    }
+
+	    //
+	    // Attribution
+	    //
+
+	    attribText = getTextProperty(kb, subject, CC('attributionName'));
+	    attribURL = getURLProperty(kb, subject, CC('attributionURL'));
+
+	    if (!attribText) {
+		// Try a creator attribute instead
+		attribText = (getTextProperty(kb, subject, DC('creator')) ||
+			      getTextProperty(kb, subject, DCTERMS('creator')) ||
+			      getTextProperty(kb, subject, kb.sym('twitter:creator')));
+	    }
+
+	    if (attribText && !attribURL) {
+		// Text creator might be a URL
+		attribURL = getURL(attribText);
+	    }
+	    
+	    if (!attribText) {
+		// Fall back on URL
+		attribText = attribURL;
+	    }
+	    
+	    //
+	    // License
+	    //
+
+	    licenseURL = (getURLProperty(kb, subject, XHTML('license')) ||
+			  getURLProperty(kb, subject, DCTERMS('license')) ||
+			  getURLProperty(kb, subject, CC('license')));
+
+	    if (licenseURL) {
+		licenseText = getLicenseName(licenseURL);
+	    }
+
+	    if (!licenseText) {
+		// Try to get a license text at least, even if the property isn't a URL
+		licenseText = (getTextProperty(kb, subject, DC('rights')) ||
+			       getTextProperty(kb, subject, XHTML('license')));
+	    }
 
 	    // Did we manage to get anything that can make it into a credit?
 	    return (titleText || attribText || licenseText || sources.length > 0);

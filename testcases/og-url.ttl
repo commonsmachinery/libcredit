@@ -1,0 +1,11 @@
+# og-url: use og:url instead of subject URI.
+#
+# Since OG is often non-RDFa, try this as a literal
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix og: <http://ogp.me/ns#> .
+
+<> dc:source <http://src/> .
+<http://src/> og:url "http://my-page/" .
+
+

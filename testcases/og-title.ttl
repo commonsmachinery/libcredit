@@ -1,0 +1,8 @@
+# og-title: use og:title if no dc:title
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix og: <http://ogp.me/ns#> .
+
+<> dc:source <urn:src> .
+<urn:src> og:title "a title" .
+
