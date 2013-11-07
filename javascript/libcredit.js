@@ -13,7 +13,7 @@
     var libcredit = {};
 
     // Namespace used in the code
-    var DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
+    const DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
     const DCTERMS = $rdf.Namespace('http://purl.org/dc/terms/');
     const CC = $rdf.Namespace('http://creativecommons.org/ns#');
     const XHTML = $rdf.Namespace('http://www.w3.org/1999/xhtml/vocab#');
@@ -159,6 +159,7 @@
 	that.getLicenseURL = function() { return licenseURL; };
 	that.getSources = function() { return sources.slice(0); };
 
+
     /* credit.format(formatter, [i18n])
      *
      * Use a formatter to generate a credit based on the metadata in
@@ -176,8 +177,53 @@
      */
 
 	that.format = function(formatter, i18n) {
-	    var creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
+	    var re = /<[a-z]+>/g;
+	    var creditLine;
+	    var textStart, textEnd;
+	    var match;
+	    var item;
 	    
+	    creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
+	    // TODO: translate creditLine
+
+	    formatter.begin_credit();
+
+	    // Split credit line into text and credit items
+	    textStart = 0;
+	    while ((match = re.exec(creditLine)) != null) {
+		item = match[0];
+		textEnd = re.lastIndex - item.length;
+
+		// Add any preceeding plain text
+		if (textStart < textEnd) {
+		    formatter.add_text(creditLine.slice(textStart, textEnd));
+		}
+		textStart = re.lastIndex;
+		
+		switch (item) {
+		case '<title>': 
+		    formatter.add_title(titleText, titleURL);
+		    break;
+
+		case '<attrib>':
+		    formatter.add_attrib(attribText, attribURL);
+		    break;
+
+		case '<license>': 
+		    formatter.add_license(licenseText, licenseURL);
+		    break;
+
+		default:
+		    throw 'unexpected credit item: ' + item;
+		}
+	    }
+
+	    // Add any trailing text
+	    if (textStart < creditLine.length) {
+		formatter.add_text(creditLine.slice(textStart));
+	    }
+	    
+	    formatter.end_credit();
 	};
 
 	return that;

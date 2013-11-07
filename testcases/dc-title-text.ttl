@@ -1,4 +1,4 @@
-# nothing: no useful metadata for a credit
+# dc-title-text: just a title, no useful source URL
 
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 
