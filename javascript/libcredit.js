@@ -344,7 +344,7 @@
 	    creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
 	    // TODO: translate creditLine
 
-	    formatter.begin_credit();
+	    formatter.beginCredit();
 
 	    // Split credit line into text and credit items
 	    textStart = 0;
@@ -354,21 +354,21 @@
 
 		// Add any preceeding plain text
 		if (textStart < textEnd) {
-		    formatter.add_text(creditLine.slice(textStart, textEnd));
+		    formatter.addText(creditLine.slice(textStart, textEnd));
 		}
 		textStart = re.lastIndex;
 		
 		switch (item) {
 		case '<title>': 
-		    formatter.add_title(titleText, titleURL);
+		    formatter.addTitle(titleText, titleURL);
 		    break;
 
 		case '<attrib>':
-		    formatter.add_attrib(attribText, attribURL);
+		    formatter.addAttrib(attribText, attribURL);
 		    break;
 
 		case '<license>': 
-		    formatter.add_license(licenseText, licenseURL);
+		    formatter.addLicense(licenseText, licenseURL);
 		    break;
 
 		default:
@@ -378,7 +378,7 @@
 
 	    // Add any trailing text
 	    if (textStart < creditLine.length) {
-		formatter.add_text(creditLine.slice(textStart));
+		formatter.addText(creditLine.slice(textStart));
 	    }
 	    
 
@@ -387,14 +387,14 @@
 	    //
 
 	    if (sources.length > 0) {
-		formatter.begin_sources();
+		formatter.beginSources('Sources:'); // TODO: translation
 		for (i = 0; i < sources.length; i++) {
 		    sources[i].format(formatter, i18n);
 		}
-		formatter.end_sources();
+		formatter.endSources();
 	    }
 
-	    formatter.end_credit();
+	    formatter.endCredit();
 	};
 
 	return that;
@@ -410,14 +410,14 @@
     var creditFormatter = function() {
 	var that = {};
 	
-	that.begin_credit = function() {};
-	that.end_credit = function() {};
-	that.begin_sources = function(label) {};
-	that.end_sources = function() {};
-	that.add_title = function(text, url) {};
-	that.add_attrib = function(text, url) {};
-	that.add_license = function(text, url) {};
-	that.add_text = function(text) {};
+	that.beginCredit = function() {};
+	that.endCredit = function() {};
+	that.beginSources = function(label) {};
+	that.endSources = function() {};
+	that.addTitle = function(text, url) {};
+	that.addAttrib = function(text, url) {};
+	that.addLicense = function(text, url) {};
+	that.addText = function(text) {};
 
 	return that;
     };
@@ -427,6 +427,52 @@
     var textCreditFormatter = function() {
 	var that = creditFormatter();
 
+	var creditText = '';
+	var sourceDepth = 0;
+
+	that.beginCredit = function() {
+	    var i;
+	    if (sourceDepth > 0) {
+		creditText += '\n';
+
+		for (i = 0; i < sourceDepth; i++) {
+		    creditText += '    ';
+		}
+
+		creditText += '* ';
+	    }
+	};
+
+	that.beginSources = function(label) {
+	    if (creditText) creditText += ' ';
+	    creditText += label;
+	    
+	    sourceDepth++;
+	};
+
+	that.endSources = function() {
+	    sourceDepth--;
+	};
+
+	that.addTitle = function(text, url) {
+	    creditText += text;
+	};
+
+	that.addAttrib = function(text, url) {
+	    creditText += text;
+	};
+
+	that.addLicense = function(text, url) {
+	    creditText += text;
+	};
+
+	that.addText = function(text) {
+	    creditText += text;
+	};
+	
+	that.getText = function() {
+	    return creditText;
+	};
 
 	return that;
     };

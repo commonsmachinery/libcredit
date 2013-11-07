@@ -45,7 +45,7 @@
 	};
 
 
-	that.begin_credit = function() {
+	that.beginCredit = function() {
 	    if (sourceDepth === 0) {
 		// At top
 		that.output = [];
@@ -54,7 +54,7 @@
 	    sourceDepth++;
 	};
 	
-	that.end_credit = function() {
+	that.endCredit = function() {
 	    if (sourceDepth > 1) {
 		sourceStack.pop();
 	    }
@@ -62,7 +62,7 @@
 	    sourceDepth--;
 	};
 
-	that.add_title = function(text, url) {
+	that.addTitle = function(text, url) {
 	    if (sourceDepth > 1) {
 		sourceStack.push(url);
 	    }
@@ -70,11 +70,11 @@
 	    add_line('title', text, url);
 	};
 
-	that.add_attrib = function(text, url) {
+	that.addAttrib = function(text, url) {
 	    add_line('attrib', text, url);
 	};
 
-	that.add_license = function(text, url) {
+	that.addLicense = function(text, url) {
 	    add_line('license', text, url);
 	};
 
@@ -203,4 +203,15 @@
 	testCreditOutput('source-with-full-attrib', 'http://src/');
     });
 
+    describe('Text formatter', function() {
+	testCredit('source-with-full-attrib', 'http://src/', function (credit) {
+	    var tf = libcredit.textCreditFormatter();
+	    credit.format(tf);
+
+	    expect( tf.getText() ).to.be(
+		'a title by name of attribution (CC-BY-SA 3.0 Unported) Sources:\n' +
+		    '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported)'
+	    );
+	});
+    });
 })(libcredit);
