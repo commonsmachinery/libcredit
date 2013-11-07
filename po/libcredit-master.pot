@@ -22,27 +22,30 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=N; plural=Y;"
 
-msgid "<credit><title/> by <attrib/> (<license/>)</credit>"
+msgid "<title> by <attrib> (<license>)."
 msgstr ""
 
-msgid "<credit><title/> by <attrib/></credit>"
+msgid "<title> by <attrib>."
 msgstr ""
 
-msgid "<credit><title/> (<license/>)</credit>"
+msgid "<title> (<license>)."
 msgstr ""
 
-msgid "<credit><title/></credit>"
+msgid "<title>."
 msgstr ""
 
-msgid "<credit>Credit: <attrib/> (<license/>)</credit>"
+msgid "Credit: <attrib> (<license>)."
 msgstr ""
 
-msgid "<credit>Credit: <attrib/></credit>"
+msgid "Credit: <attrib>."
 msgstr ""
 
-msgid "<credit>License: <license/></credit>"
+msgid "License: <license>."
 msgstr ""
 
-msgid "Sources:"
-msgstr ""
+msgid "Source:"
+msgid_plural "Sources:"
+msgstr[0] ""
+msgstr[1] ""

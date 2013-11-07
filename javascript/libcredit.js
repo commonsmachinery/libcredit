@@ -24,24 +24,24 @@
 	if (hasTitle) {
 	    if (hasAttrib) {
 		return (hasLicense ?
-			'<title> by <attrib> (<license>)' : 
-			'<title> by <attrib>');
+			'<title> by <attrib> (<license>).' : 
+			'<title> by <attrib>.');
 	    }
 	    else {
 		return (hasLicense ?
-			'<title> (<license>)' :
-			'<title>');
+			'<title> (<license>).' :
+			'<title>.');
 	    }
 	}
 	else {
 	    if (hasAttrib) {
 		return (hasLicense ?
-			'Credit: <attrib> (<license>)' :
-			'Credit: <attrib>');
+			'Credit: <attrib> (<license>).' :
+			'Credit: <attrib>.');
 	    }
 	    else {
 		return (hasLicense ?
-			'License: <license>' :
+			'License: <license>.' :
 			null);
 	    }
 	}
@@ -340,9 +340,16 @@
 	    var match;
 	    var item;
 	    var i;
+	    var srcLabel;
 	    
 	    creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
-	    // TODO: translate creditLine
+
+	    if (i18n) {
+		creditLine = (i18n
+			      .translate(creditLine)
+			      .onDomain('libcredit')
+			      .fetch());
+	    }
 
 	    formatter.beginCredit();
 
@@ -387,7 +394,18 @@
 	    //
 
 	    if (sources.length > 0) {
-		formatter.beginSources('Sources:'); // TODO: translation
+		if (i18n) {
+		    srcLabel = (i18n
+				.translate('Source:')
+				.onDomain('libcredit')
+				.ifPlural(sources.length, 'Sources:')
+				.fetch());
+		}
+		else {
+		    srcLabel = sources.length < 2 ? 'Source:' : 'Sources:';
+		};
+
+		formatter.beginSources(srcLabel);
 		for (i = 0; i < sources.length; i++) {
 		    sources[i].format(formatter, i18n);
 		}

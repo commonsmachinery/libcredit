@@ -1,3 +1,5 @@
+// -*- coding: utf-8 -*-
+
 (function (libcredit) {
 
     //
@@ -209,8 +211,47 @@
 	    credit.format(tf);
 
 	    expect( tf.getText() ).to.be(
-		'a title by name of attribution (CC-BY-SA 3.0 Unported) Sources:\n' +
-		    '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported)'
+		'a title by name of attribution (CC-BY-SA 3.0 Unported). Source:\n' +
+		    '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported).'
+	    );
+	});
+    });
+
+    describe('i18n', function() {
+	var i18n, raw, data;
+
+	// We're in a unit test, so let's just use the eval() function
+	// to get the locale json.  Don't do this in live code!
+
+	raw = fs.readFileSync('locales/sv.json', 'utf-8');
+	data = eval('(' + raw + ')');
+	i18n = new jed.Jed({
+	    domain: 'libcredit',
+	    locale_data: {
+		libcredit: data
+	    }});
+
+	// Singular form
+	testCredit('source-with-full-attrib', 'http://src/', function (credit) {
+	    var tf = libcredit.textCreditFormatter();
+	    credit.format(tf, i18n);
+
+	    expect( tf.getText() ).to.be(
+		'a title av name of attribution (CC-BY-SA 3.0 Unported). Källa:\n' +
+		    '    * subsrc title av subsrc attribution (CC-BY-NC-ND 3.0 Unported).'
+	    );
+	});
+
+
+	// Plural forms
+	testCredit('sources-uris', 'http://src/', function (credit) {
+	    var tf = libcredit.textCreditFormatter();
+	    credit.format(tf, i18n);
+
+	    expect( tf.getText() ).to.be(
+		'main title. Källor:\n' +
+		    '    * http://subsrc-1/.\n' + 
+		    '    * http://subsrc-2/.'
 	    );
 	});
     });
