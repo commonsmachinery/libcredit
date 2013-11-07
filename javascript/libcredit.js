@@ -317,7 +317,7 @@
 	that.getSources = function() { return sources.slice(0); };
 
 
-    /* credit.format(formatter, [i18n])
+    /* credit.format(formatter, [sourceDepth, [i18n]])
      *
      * Use a formatter to generate a credit based on the metadata in
      * the credit object.
@@ -327,13 +327,16 @@
      * - formatter: a formatter object, typically derived from
      *   creditFormatter().
      *
+     * - sourceDepth: number of levels of sources to get. If omitted
+     *   will default to 1, if falsy will not include any sources.
+     *
      * - i18n: if provided, this must be a Jed instance for the domain
      *   "libcredit".  It will be used to translate the credit
      *   message. The caller is responsible for loading the correct
      *   language into it.
      */
 
-	that.format = function(formatter, i18n) {
+	that.format = function(formatter, sourceDepth, i18n) {
 	    var re = /<[a-z]+>/g;
 	    var creditLine;
 	    var textStart, textEnd;
@@ -341,6 +344,9 @@
 	    var item;
 	    var i;
 	    var srcLabel;
+	    
+	    if (sourceDepth === undefined)
+		sourceDepth = 1;
 	    
 	    creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
 
@@ -351,7 +357,7 @@
 			      .fetch());
 	    }
 
-	    formatter.beginCredit();
+	    formatter.begin();
 
 	    // Split credit line into text and credit items
 	    textStart = 0;
@@ -393,7 +399,7 @@
 	    // Add sources
 	    //
 
-	    if (sources.length > 0) {
+	    if (sources.length > 0 && sourceDepth && sourceDepth > 0) {
 		if (i18n) {
 		    srcLabel = (i18n
 				.translate('Source:')
@@ -406,13 +412,17 @@
 		};
 
 		formatter.beginSources(srcLabel);
+
 		for (i = 0; i < sources.length; i++) {
-		    sources[i].format(formatter, i18n);
+		    formatter.beginSource();
+		    sources[i].format(formatter, sourceDepth - 1, i18n);
+		    formatter.endSource();
 		}
+
 		formatter.endSources();
 	    }
 
-	    formatter.endCredit();
+	    formatter.end();
 	};
 
 	return that;
@@ -428,10 +438,12 @@
     var creditFormatter = function() {
 	var that = {};
 	
-	that.beginCredit = function() {};
-	that.endCredit = function() {};
+	that.begin = function() {};
+	that.end = function() {};
 	that.beginSources = function(label) {};
 	that.endSources = function() {};
+	that.beginSource = function() {};
+	that.endSource = function() {};
 	that.addTitle = function(text, url) {};
 	that.addAttrib = function(text, url) {};
 	that.addLicense = function(text, url) {};
@@ -448,7 +460,7 @@
 	var creditText = '';
 	var sourceDepth = 0;
 
-	that.beginCredit = function() {
+	that.begin = function() {
 	    var i;
 	    if (sourceDepth > 0) {
 		creditText += '\n';
@@ -497,7 +509,7 @@
     libcredit.textCreditFormatter = textCreditFormatter;
 
 
-    var htmlCreditFormatter = function() {
+    var htmlCreditFormatter = function(document) {
 	var that = creditFormatter();
 
 

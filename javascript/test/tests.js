@@ -47,7 +47,7 @@
 	};
 
 
-	that.beginCredit = function() {
+	that.begin = function() {
 	    if (sourceDepth === 0) {
 		// At top
 		that.output = [];
@@ -56,7 +56,7 @@
 	    sourceDepth++;
 	};
 	
-	that.endCredit = function() {
+	that.end = function() {
 	    if (sourceDepth > 1) {
 		sourceStack.pop();
 	    }
@@ -95,7 +95,7 @@
 	    
 	    expect( credit ).to.not.be( null );
 
-	    credit.format(f);
+	    credit.format(f, 10); // we want some more sources
 	    expect( f.output ).to.be.an( 'array' );
 
 	    actual = f.output;
@@ -234,7 +234,7 @@
 	// Singular form
 	testCredit('source-with-full-attrib', 'http://src/', function (credit) {
 	    var tf = libcredit.textCreditFormatter();
-	    credit.format(tf, i18n);
+	    credit.format(tf, 10, i18n);
 
 	    expect( tf.getText() ).to.be(
 		'a title av name of attribution (CC-BY-SA 3.0 Unported). Källa:\n' +
@@ -246,7 +246,7 @@
 	// Plural forms
 	testCredit('sources-uris', 'http://src/', function (credit) {
 	    var tf = libcredit.textCreditFormatter();
-	    credit.format(tf, i18n);
+	    credit.format(tf, 10, i18n);
 
 	    expect( tf.getText() ).to.be(
 		'main title. Källor:\n' +
