@@ -8,9 +8,9 @@
 # Distributed under an GPLv2 license, please see LICENSE in the top dir.
 
 import sys
+import re
 import gettext
 import rdflib
-import xml.parsers.expat
 from xml.dom import minidom
 
 try:
@@ -18,10 +18,19 @@ try:
 except ImportError:
     import urllib.parse as urlparse
 
-try:
-    gettext.install('libcredit', sys.prefix + '/share/locale')
-except IOError:
-    _ = lambda s: s
+
+def get_i18n(languages = None):
+    if languages is None:
+        i18n = gettext.translation('libcredit', sys.prefix + '/share/locale', fallback = True)
+    else:
+        i18n = gettext.translation('libcredit', sys.prefix + '/share/locale', languages = languages)
+
+    i18n.set_output_charset('utf-8')
+    return i18n
+
+# Set up a default translation based on the system locale
+_i18n = get_i18n()
+
 
 def get_license_label(url):
     scheme, netloc, path = urlparse.urlparse(url)[:3]
@@ -46,21 +55,23 @@ def get_license_label(url):
             "/licence/lal/it": "Licenza Arte Libera",
             "/licence/lal/pl": "Licencja Wolnej Sztuki 1.3",
             "/licence/lal/licence-art-libre-12": "Licence Art Libre 1.2",
-        }[path]
+        }.get(path)
     return label
 
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
 CREDIT_MARKUP = {
-    (True, True, True):     _("<credit><title/> by <attrib/> (<license/>)</credit>"),
-    (True, True, False):    _("<credit><title/> by <attrib/></credit>"),
-    (True, False, True):    _("<credit><title/> (<license/>)</credit>"),
-    (True, False, False):   _("<credit><title/></credit>"),
-    (False, True, True):    _("<credit>Credit: <attrib/> (<license/>)</credit>"),
-    (False, True, False):   _("<credit>Credit: <attrib/></credit>"),
-    (False, False, True):   _("<credit>License: <license/></credit>"),
+    (True, True, True):     "<title> by <attrib> (<license>).",
+    (True, True, False):    "<title> by <attrib>.",
+    (True, False, True):    "<title> (<license>).",
+    (True, False, False):   "<title>.",
+    (False, True, True):    "Credit: <attrib> (<license>).",
+    (False, True, False):   "Credit: <attrib>.",
+    (False, False, True):   "License: <license>.",
     (False, False, False):  None,
 }
+
+ITEM_RE = re.compile('(<[a-z]+>)')
 
 WORK_QUERY_FORMAT = """
     PREFIX dc: <http://purl.org/dc/elements/1.1/>
@@ -103,6 +114,12 @@ SOURCE_QUERY_FORMAT = """
     }
 """
 
+def normalize(obj):
+    if obj is not None:
+        return unicode(obj)
+    else:
+        return None
+
 class Credit:
     """
     Parse attribution data stored in RDF.
@@ -125,11 +142,11 @@ class Credit:
         query = WORK_QUERY_FORMAT % {"query_base": query_uri}
         result = list(g.query(query))[0]
 
-        self.title = result.title
-        self.creator = result.creator
-        self.license = result.license
-        self.attributionName = result.attributionName
-        self.attributionURL = result.attributionURL
+        self.title = normalize(result.title)
+        self.creator = normalize(result.creator)
+        self.license = normalize(result.license)
+        self.attributionName = normalize(result.attributionName)
+        self.attributionURL = normalize(result.attributionURL)
 
         if self.attributionName is None:
             self.attributionName = self.creator
@@ -146,10 +163,10 @@ class Credit:
             # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
             if self.attributionName is None:
-                self.attributionName = flickr_by
+                self.attributionName = normalize(flickr_by)
 
             if self.attributionURL is None:
-                self.attributionURL = flickr_by
+                self.attributionURL = normalize(flickr_by)
 
         self.sources = []
 
@@ -160,14 +177,19 @@ class Credit:
             s = Credit(rdf, query_uri=r['source'])
             self.sources.append(s)
 
-    def format(self, formatter, source_depth=1):
+        # TODO: raise an exception if no credit info is found?
+            
+
+    def format(self, formatter, source_depth = 1, i18n = _i18n):
         """
         Create human-readable credit with the given formatter.
 
         Keyword arguments:
         formatter -- a CreditFormatter to use for output
         source_depth -- maximum depth for source works traversal
+        i18n - a gettext class with the desired language (domain "libcredit")
         """
+
         markup = CREDIT_MARKUP[(
             self.title is not None,
             self.attributionURL is not None or self.attributionName is not None,
@@ -177,41 +199,38 @@ class Credit:
         if not markup:
             return # TODO: raise an exception instead?
         
-        # handler functions
-        def start_element(name, attrs):
-            if name == 'credit':
-                formatter.begin()
-            elif name == 'title':
+        if i18n:
+            markup = i18n.gettext(markup)
+            
+        formatter.begin()
+
+        for item in ITEM_RE.split(markup):
+            if item == '<title>':
                 formatter.add_title(self.title, None)
-            elif name == 'attrib':
-                formatter.add_attrib(str(self.attributionName), str(self.attributionURL))
-            elif name == 'license':
-                license_url = str(self.license)
+            elif item == '<attrib>':
+                formatter.add_attrib(self.attributionName, self.attributionURL)
+            elif item == '<license>':
+                license_url = self.license
                 license_label = get_license_label(license_url)
                 if license_label is None:
                     license_label = license_url
                 formatter.add_license(license_label, license_url)
+            else:
+                formatter.add_text(item)
 
-        def end_element(name):
-            if name == 'credit':
-                if self.sources and source_depth != 0:
-                    formatter.begin_sources(_("Sources:"))
-                    for s in self.sources:
-                        formatter.begin_source()
-                        s.format(formatter, source_depth - 1)
-                        formatter.end_source()
-                    formatter.end_sources()
-                formatter.end()
+        if self.sources and source_depth > 0:
+            formatter.begin_sources(i18n.ngettext(
+                    'Source:', 'Sources:', len(self.sources)))
+            
+            for s in self.sources:
+                formatter.begin_source()
+                s.format(formatter, source_depth - 1, i18n)
+                formatter.end_source()
 
-        def char_data(data):
-            formatter.add_text(data)
+            formatter.end_sources()
 
-        p = xml.parsers.expat.ParserCreate()
+        formatter.end()
 
-        p.StartElementHandler = start_element
-        p.EndElementHandler = end_element
-        p.CharacterDataHandler = char_data
-        p.Parse(markup)
 
 class CreditFormatter(object):
     def begin(self):
@@ -277,8 +296,11 @@ class TextCreditFormatter(CreditFormatter):
         return self.text
 
 class HTMLCreditFormatter(CreditFormatter):
-    def __init__(self):
-        self.doc = minidom.Document()
+    def __init__(self, document = None):
+        if document:
+            self.doc = document
+        else:
+            self.doc = minidom.Document()
         self.root = None
         self.node_stack = []
         self.depth = 0
@@ -342,6 +364,9 @@ class HTMLCreditFormatter(CreditFormatter):
     def add_text(self, text):
         self.node_stack[-1].appendChild(self.doc.createTextNode(text))
 
+    def get_root(self):
+        return self.root
+
     def get_text(self):
         if self.root:
             return self.root.toxml()
@@ -351,8 +376,8 @@ class HTMLCreditFormatter(CreditFormatter):
 
 if __name__ == '__main__':
     c = Credit(sys.stdin.read())
-    f = HTMLCreditFormatter()
-    c.format(f)
+    f = TextCreditFormatter()
+    c.format(f, 10)
     t = f.get_text()
     if t:
         sys.stdout.write(t + '\n')
