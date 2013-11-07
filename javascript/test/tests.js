@@ -29,17 +29,44 @@
     var testCreditFormatter = function() {
 	var that = libcredit.creditFormatter();
 
+	var sourceStack = [];
+	var sourceDepth = 0;
+
 	var add_line = function(type, text, url) {
-	    that.output.push(type + ' "' +
+	    var prefix = '';
+	    
+	    if (sourceStack.length) {
+		prefix = '<' + sourceStack.join('> <') + '> ';
+	    }
+	    
+	    that.output.push(prefix + type + ' "' +
 			     (text ? text : '') + '" <' +
 			     (url ? url : '') + '>');
 	};
 
+
 	that.begin_credit = function() {
-	    that.output = [];
+	    if (sourceDepth === 0) {
+		// At top
+		that.output = [];
+	    }
+
+	    sourceDepth++;
 	};
 	
+	that.end_credit = function() {
+	    if (sourceDepth > 1) {
+		sourceStack.pop();
+	    }
+	    
+	    sourceDepth--;
+	};
+
 	that.add_title = function(text, url) {
+	    if (sourceDepth > 1) {
+		sourceStack.push(url);
+	    }
+	    
 	    add_line('title', text, url);
 	};
 
@@ -50,8 +77,6 @@
 	that.add_license = function(text, url) {
 	    add_line('license', text, url);
 	};
-
-	// TODO: sources
 
 	return that;
     };
@@ -170,6 +195,12 @@
 
     describe('Twitter', function () {
 	testCreditOutput('twitter-creator', 'urn:src');
+    });
+
+    describe('Sources', function () {
+	testCreditOutput('sources-uris', 'http://src/');
+	testCreditOutput('sources-with-sources', 'http://src/');
+	testCreditOutput('source-with-full-attrib', 'http://src/');
     });
 
 })(libcredit);

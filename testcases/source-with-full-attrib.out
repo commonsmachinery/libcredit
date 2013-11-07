@@ -1,0 +1,7 @@
+title "a title" <http://src/>
+attrib "name of attribution" <http://attrib/>
+license "CC-BY-SA 3.0 Unported" <http://creativecommons.org/licenses/by-sa/3.0/>
+<http://subsrc/> title "subsrc title" <http://subsrc/>
+<http://subsrc/> attrib "subsrc attribution" <http://subsrc/attrib/>
+<http://subsrc/> license "CC-BY-NC-ND 3.0 Unported" <http://creativecommons.org/licenses/by-nc-nd/3.0/>
+

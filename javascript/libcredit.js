@@ -152,10 +152,36 @@
 	var sources = [];
 
 	// Make scope a little cleaner by putting the parsing into
-	// it's own function
+	// it's own functions
+
+	var addSources = function(subject, predicate) {
+	    var srcObjs, i, src;
+	    
+	    srcObjs = kb.each(subject, predicate);
+
+	    for (i = 0; i < srcObjs.length; i++) {
+		src = null;
+
+		switch (srcObjs[i].termType) {
+		case 'symbol':
+		case 'bnode':
+		    src = credit(kb, srcObjs[i]);
+		    break;
+
+		case 'literal':
+		    // Accept URLs in literals too
+		    src = credit(kb, getURL(srcObjs[i].value));
+		    break;
+		}
+
+		if (src) {
+		    sources.push(src);
+		}
+	    }
+	};
 
 	var parse = function() {
-	    var mainSource, subject, v;
+	    var mainSource, subject;
 
 	    if (subjectURI === null || subjectURI === undefined) {
 		// Locate using <> <dc:source> ?, which is how the
@@ -172,8 +198,12 @@
 		    return false;
 		}
 	    }
-	    else {
+	    else if (typeof subjectURI === 'string') {
 		subject = kb.sym(subjectURI);
+	    }
+	    else {
+		// Assume this is already a symbol in the KB
+		subject = subjectURI;
 	    }
 
 	    //
@@ -242,6 +272,13 @@
 			       getTextProperty(kb, subject, XHTML('license')));
 	    }
 
+	    //
+	    // Sources
+	    //
+	    
+	    addSources(subject, DC('source'));
+	    addSources(subject, DCTERMS('source'));
+	    
 	    // Did we manage to get anything that can make it into a credit?
 	    return (titleText || attribText || licenseText || sources.length > 0);
 	};
@@ -302,6 +339,7 @@
 	    var textStart, textEnd;
 	    var match;
 	    var item;
+	    var i;
 	    
 	    creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
 	    // TODO: translate creditLine
@@ -343,6 +381,19 @@
 		formatter.add_text(creditLine.slice(textStart));
 	    }
 	    
+
+	    //
+	    // Add sources
+	    //
+
+	    if (sources.length > 0) {
+		formatter.begin_sources();
+		for (i = 0; i < sources.length; i++) {
+		    sources[i].format(formatter, i18n);
+		}
+		formatter.end_sources();
+	    }
+
 	    formatter.end_credit();
 	};
 

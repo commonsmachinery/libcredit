@@ -1,0 +1,20 @@
+# source-with-full-attrib: A complete by-the-book CC attribution of
+# both main work and its source
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix cc: <http://creativecommons.org/ns#> .
+@prefix xhv: <http://www.w3.org/1999/xhtml/vocab#> .
+
+<> dc:source <http://src/> .
+<http://src/>
+  dc:title "a title" ;
+  cc:attributionName "name of attribution" ;
+  cc:attributionURL <http://attrib/> ;
+  xhv:license <http://creativecommons.org/licenses/by-sa/3.0/> ;
+  dc:source <http://subsrc/> .
+
+<http://subsrc/>
+  dc:title "subsrc title" ;
+  cc:attributionName "subsrc attribution" ;
+  cc:attributionURL <http://subsrc/attrib/> ;
+  xhv:license <http://creativecommons.org/licenses/by-nc-nd/3.0/> .

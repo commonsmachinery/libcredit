@@ -1,0 +1,13 @@
+# sources-uris: sources with their own sources
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+
+<> dc:source <http://src/> .
+
+<http://src/>
+  dc:title "main title" ;
+  dc:source <http://subsrc-1/> ;
+  dc:source <http://subsrc-2/> .
+
+<http://subsrc-1/> dc:source <http://src-of-subsrc-1/> .
+<http://subsrc-2/> dc:source <http://src-of-subsrc-2/> .
