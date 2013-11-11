@@ -285,7 +285,7 @@ class TextCreditFormatter(CreditFormatter):
 
     def begin_sources(self, label=None):
         if label:
-            self.text += " " + label
+            self.text += u" " + label
         self.depth += 1
 
     def end_sources(self):

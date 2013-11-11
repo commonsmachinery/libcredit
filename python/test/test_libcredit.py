@@ -143,7 +143,7 @@ class LibCreditTests(unittest.TestCase):
         tf = libcredit.TextCreditFormatter()
         credit.format(tf)
         self.assertEqual(tf.get_text(),
-            'a title by name of attribution (CC-BY-SA 3.0 Unported). Source:\n' + \
+            u'a title by name of attribution (CC-BY-SA 3.0 Unported). Source:\n' + \
             '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported).')
 
     def test_i18n(self):
@@ -153,14 +153,14 @@ class LibCreditTests(unittest.TestCase):
         credit = load_credit('source-with-full-attrib', 'http://src/')
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
-        self.assertEqual(tf.get_text().encode("utf-8"),
+        self.assertEqual(tf.get_text(),
             u'a title av name of attribution (CC-BY-SA 3.0 Unported). Källa:\n' + \
             '    * subsrc title av subsrc attribution (CC-BY-NC-ND 3.0 Unported).')
 
-        credut = load_credit('sources-uris', 'http://src/')
+        credit = load_credit('sources-uris', 'http://src/')
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
-        self.assertEqual(tf.get_text().encode("utf-8"),
+        self.assertEqual(tf.get_text(),
             u'main title. Källor:\n' + \
             '    * http://subsrc-1/.\n' + \
             '    * http://subsrc-2/.')
