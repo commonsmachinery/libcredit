@@ -61,7 +61,6 @@ def get_license_label(url):
         }.get(path)
     return label
 
-
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
 CREDIT_MARKUP = {
@@ -93,6 +92,19 @@ def a2uri(obj):
     else:
         raise ValueError("Unrecognisable URI type for object: %s" % obj)
 
+def get_url(url):
+    """
+    Return uri if it can be used as a URL,
+    otherwise return None.
+
+    Parameters:
+    url -- the license URL
+    """
+    url_re = "^https?:"
+    if re.match(url_re, unicode(url)):
+        return url
+    else:
+        return None
 
 class Credit(object):
     """
@@ -116,10 +128,13 @@ class Credit(object):
         else:
             subject = rdflib.term.URIRef(subject)
 
-        self.title_url = self._get_property_any(subject, OG['url'])
+        #
+        # Title
+        #
+        self.title_url = get_url(self._get_property_any(subject, OG['url']))
         
-        if self.title_url:
-            self.title_url = unicode(subject)
+        if self.title_url is None:
+            self.title_url = get_url(unicode(subject))
 
         self.title_text = self._get_property_any(subject, [
             DC['title'],
@@ -130,25 +145,33 @@ class Credit(object):
         if self.title_text is None:
             self.title_text = self.title_url
 
-        self.attrib_text = self._get_property_any(subject,
-            CC['attributionName'])
-
-        self.attrib_url = self._get_property_any(subject,
-            CC['attributionURL'])
+        #
+        # Attribution
+        #
+        self.attrib_text = self._get_property_any(subject, CC['attributionName'])
+        self.attrib_url = get_url(self._get_property_any(subject, CC['attributionURL']))
 
         if self.attrib_text is None:
             self.attrib_text = self._get_property_any(subject, [
                 DC['creator'],
                 DCTERMS['creator'],
                 'twitter:creator',
-            ]) or self.attrib_url
+            ])
 
+        if self.attrib_text is not None and self.attrib_url is None:
+            self.attrib_url = get_url(self.attrib_text)
 
-        self.license_url = self._get_property_any(subject, [
+        if self.attrib_text is None:
+            self.attrib_text = self.attrib_url
+
+        #
+        # License
+        #
+        self.license_url = get_url(self._get_property_any(subject, [
             XHV['license'],
             CC['license'],
             DCTERMS['license'],
-        ])
+        ]))
 
         if self.license_url:
             self.license_text = get_license_label(self.license_url)

@@ -14,32 +14,6 @@ import gettext
 import rdflib
 import libcredit
 
-def test_credit(filename, source_uri, func=None):
-    g = rdflib.Graph()
-    g.parse('../testcases/' + filename + '.ttl', format="n3")
-    credit = libcredit.Credit(g, source_uri)
-    if func:
-        func(credit)
-
-def load_credit(filename, source_uri):
-    g = rdflib.Graph()
-    g.parse('../testcases/' + filename + '.ttl', format="n3")
-    credit = libcredit.Credit(g, source_uri)
-    return credit
-
-def format_credit(credit):
-    tf = TestCreditFormatter()
-    credit.format(tf, 10)
-    actual = tf.output
-    actual.sort()
-    return actual
-
-def load_output(filename):
-    out = open('../testcases/' + filename + '.out').read().split('\n')
-    expected = [unicode(s) for s in out if s != '']
-    expected.sort()
-    return expected
-
 class TestCreditFormatter(libcredit.CreditFormatter):
     def __init__(self):
         self.source_stack = []
@@ -75,6 +49,25 @@ class TestCreditFormatter(libcredit.CreditFormatter):
         self.output.append(prefix + type + ' "' + \
             (text if text else '') + '" <' + \
             (url if url else '') + '>')
+
+def load_credit(filename, source_uri):
+    g = rdflib.Graph()
+    g.parse('../testcases/' + filename + '.ttl', format="n3")
+    credit = libcredit.Credit(g, source_uri)
+    return credit
+
+def format_credit(credit):
+    tf = TestCreditFormatter()
+    credit.format(tf, 10)
+    actual = tf.output[:]
+    actual.sort()
+    return actual
+
+def load_output(filename):
+    out = open('../testcases/' + filename + '.out').read().split('\n')
+    expected = [unicode(s) for s in out if s != '']
+    expected.sort()
+    return expected
 
 class LibCreditTests(unittest.TestCase):
     def _test_credit_output(self, tests):
