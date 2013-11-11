@@ -4,6 +4,7 @@
 # Copyright 2013 Commons Machinery http://commonsmachinery.se/
 #
 # Authors: Artem Popov <artfwo@commonsmachinery.se>
+#          Peter Liljenberg <peter@commonsmachinery.se>
 #
 # Distributed under an GPLv2 license, please see LICENSE in the top dir.
 
@@ -33,18 +34,20 @@ _i18n = get_i18n()
 
 
 def get_license_label(url):
+    """
+    Return a human-readable short name for a license.
+    If the URL is unknown, it is returned as-is.
+
+    Parameters:
+    url -- the license URL
+    """
     scheme, netloc, path = urlparse.urlparse(url)[:3]
-    label = None
+    label = url
     if netloc == "creativecommons.org":
-        if path == "/publicdomain/zero/1.0/":
-            label = "Public Domain"
-        elif path.startswith("/licenses"):
-            path = path.split('/')
-            label = "CC %s %s %s" % (
-                path[2].upper(),
-                path[3],
-                "(%s)" % path[4].upper() if len(path) > 5 else "Unported"
-            )
+        m = re.match("https?:\/\/creativecommons.org\/licenses\/([-a-z]+)\/([0-9.]+)\/(?:([a-z]+)\/)?(?:deed\..*)?", url)
+        if m:
+            g = m.groups()
+            label = 'CC-%s %s %s' % (g[0].upper(), g[1], "(%s)" % g[2].upper() if g[2] else "Unported")
     elif netloc == "artlibre.org":
         label = {
             "/licence/lal": "Licence Art Libre",
@@ -57,6 +60,7 @@ def get_license_label(url):
             "/licence/lal/licence-art-libre-12": "Licence Art Libre 1.2",
         }.get(path)
     return label
+
 
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
@@ -73,112 +77,111 @@ CREDIT_MARKUP = {
 
 ITEM_RE = re.compile('(<[a-z]+>)')
 
-WORK_QUERY_FORMAT = """
-    PREFIX dc: <http://purl.org/dc/elements/1.1/>
-    PREFIX dcterms: <http://purl.org/dc/terms/>
-    PREFIX cc: <http://creativecommons.org/ns#>
-    PREFIX xhv: <http://www.w3.org/1999/xhtml/vocab#>
-    PREFIX twitter: <twitter:>
 
-    SELECT ?title ?attributionURL ?attributionName ?creator ?license
-    WHERE {
-        OPTIONAL {
-            { <%(query_base)s> dc:title ?title } UNION
-            { <%(query_base)s> dcterms:title ?title }
-        }
+DC = rdflib.Namespace('http://purl.org/dc/elements/1.1/')
+DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/')
+CC = rdflib.Namespace('http://creativecommons.org/ns#')
+XHV = rdflib.Namespace('http://www.w3.org/1999/xhtml/vocab#')
+OG = rdflib.Namespace('http://ogp.me/ns#')
 
-        OPTIONAL { <%(query_base)s> cc:attributionURL ?attributionURL }
-        OPTIONAL { <%(query_base)s> cc:attributionName ?attributionName }  
 
-        OPTIONAL {
-            { <%(query_base)s> dc:creator ?creator } UNION 
-            { <%(query_base)s> dcterms:creator ?creator } UNION
-            { <%(query_base)s> twitter:creator ?creator }  
-        }
-
-        OPTIONAL {
-            { <%(query_base)s> xhv:license ?license } UNION 
-            { <%(query_base)s> dcterms:license ?license } UNION 
-            { <%(query_base)s> cc:license ?license }
-        }
-    } LIMIT 1
-"""
-
-SOURCE_QUERY_FORMAT = """
-    PREFIX dc: <http://purl.org/dc/elements/1.1/>
-    PREFIX dcterms: <http://purl.org/dc/terms/>
-
-    SELECT ?source {
-        { <%(query_base)s> dc:source ?source } UNION
-        { <%(query_base)s> dcterms:source ?source }
-    }
-"""
-
-def normalize(obj):
-    if obj is not None:
-        return unicode(obj)
+def a2uri(obj):
+    if isinstance(obj, rdflib.URIRef):
+        return obj
+    elif isinstance(obj, basestring):
+        return rdflib.URIRef(obj)        
     else:
-        return None
+        raise ValueError("Unrecognisable URI type for object: %s" % obj)
 
-class Credit:
+
+class Credit(object):
     """
-    Parse attribution data stored in RDF.
-
+    Class for extracting credit information from RDF metadata
+    
     Keyword arguments:
-    rdf -- RDF as string
-    query_uri -- URI for querying work in the graph
+    rdf -- rdflib graph or a string of RDF/XML to parse.
+    subject -- URI for querying work in the graph
     """
-    def __init__(self, rdf, query_uri=None):
-        g = rdflib.Graph()
-        g.parse(data=rdf)
-
-        if query_uri is None:
-            # by the new convention, work is an object of a dc:source predicate for the about="" node
-            work_uri = next(g[rdflib.URIRef(''):rdflib.URIRef('http://purl.org/dc/elements/1.1/source'):])
-            query_uri = rdflib.term.URIRef(work_uri)
+    def __init__(self, rdf, subject=None):
+        if isinstance(rdf, rdflib.Graph):
+            self.g = rdf
         else:
-            query_uri = rdflib.term.URIRef(query_uri)
+            self.g = rdflib.Graph()
+            self.g.parse(data=rdf)
 
-        query = WORK_QUERY_FORMAT % {"query_base": query_uri}
-        result = list(g.query(query))[0]
+        if subject is None:
+            # by the new convention, work is an object of a dc:source predicate for the about="" node
+            new_subject_uri = next(self.g[a2uri(''):DC['source']:])
+            subject = rdflib.term.URIRef(new_subject_uri)
+        else:
+            subject = rdflib.term.URIRef(subject)
 
-        self.title = normalize(result.title)
-        self.creator = normalize(result.creator)
-        self.license = normalize(result.license)
-        self.attributionName = normalize(result.attributionName)
-        self.attributionURL = normalize(result.attributionURL)
+        self.title_url = self._get_property_any(subject, OG['url'])
+        
+        if self.title_url:
+            self.title_url = unicode(subject)
 
-        if self.attributionName is None:
-            self.attributionName = self.creator
+        self.title_text = self._get_property_any(subject, [
+            DC['title'],
+            DCTERMS['title'],
+            OG['title'],
+        ])
 
-        # flickr specials
+        if self.title_text is None:
+            self.title_text = self.title_url
+
+        self.attrib_text = self._get_property_any(subject,
+            CC['attributionName'])
+
+        self.attrib_url = self._get_property_any(subject,
+            CC['attributionURL'])
+
+        if self.attrib_text is None:
+            self.attrib_text = self._get_property_any(subject, [
+                DC['creator'],
+                DCTERMS['creator'],
+                'twitter:creator',
+            ]) or self.attrib_url
+
+
+        self.license_url = self._get_property_any(subject, [
+            XHV['license'],
+            CC['license'],
+            DCTERMS['license'],
+        ])
+
+        if self.license_url:
+            self.license_text = get_license_label(self.license_url)
+        else:
+            self.license_text = None
+
+        if self.license_text is None:
+            self.license_text = self._get_property_any(subject, [
+                DC['rights'],
+                XHV['license'],
+            ])
+
+        # flickr special cases
         # flickr_photos:by is used by flickr for the same purpose as attribution URL
-        if urlparse.urlparse(str(query_uri))[1] == "www.flickr.com":
+        if urlparse.urlparse(str(subject))[1] == "www.flickr.com":
             try:
-                flickr_by = next(g[query_uri:rdflib.term.URIRef(u'flickr_photos:by')])
+                flickr_by = next(self.g[subject:a2uri(u'flickr_photos:by')])
             except StopIteration:
                 flickr_by = None
 
             # could we just use /people/XXX/ as the last resort?
             # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
-            if self.attributionName is None:
-                self.attributionName = normalize(flickr_by)
+            if self.attrib_text is None:
+                self.attrib_text = unicode(flickr_by)
 
-            if self.attributionURL is None:
-                self.attributionURL = normalize(flickr_by)
+            if self.attrib_url is None:
+                self.attrib_url = unicode(flickr_by)
 
-        self.sources = []
-
-        query = SOURCE_QUERY_FORMAT % {"query_base": query_uri}
-        results = list(g.query(query))
-
-        for r in results:
-            s = Credit(rdf, query_uri=r['source'])
-            self.sources.append(s)
+        source_subjects = list(self.g[subject:DC['source']:]) + list(self.g[subject:DCTERMS['source']:])
+        self.sources = [Credit(rdf, subject=r) for r in source_subjects]
 
         # TODO: raise an exception if no credit info is found?
-            
 
     def format(self, formatter, source_depth = 1, i18n = _i18n):
         """
@@ -191,35 +194,32 @@ class Credit:
         """
 
         markup = CREDIT_MARKUP[(
-            self.title is not None,
-            self.attributionURL is not None or self.attributionName is not None,
-            self.license is not None
+            self.title_text is not None,
+            self.attrib_url is not None or self.attrib_text is not None,
+            self.license_url is not None or self.license_text is not None
         )]
 
         if not markup:
-            return # TODO: raise an exception instead?
+            markup = ""
+            #return # TODO: raise an exception instead?
         
         if i18n:
-            markup = i18n.gettext(markup)
+            markup = i18n.ugettext(markup)
             
         formatter.begin()
 
         for item in ITEM_RE.split(markup):
             if item == '<title>':
-                formatter.add_title(self.title, None)
+                formatter.add_title(self.title_text, self.title_url)
             elif item == '<attrib>':
-                formatter.add_attrib(self.attributionName, self.attributionURL)
+                formatter.add_attrib(self.attrib_text, self.attrib_url)
             elif item == '<license>':
-                license_url = self.license
-                license_label = get_license_label(license_url)
-                if license_label is None:
-                    license_label = license_url
-                formatter.add_license(license_label, license_url)
+                formatter.add_license(self.license_text, self.license_url)
             else:
                 formatter.add_text(item)
 
         if self.sources and source_depth > 0:
-            formatter.begin_sources(i18n.ngettext(
+            formatter.begin_sources(i18n.ungettext(
                     'Source:', 'Sources:', len(self.sources)))
             
             for s in self.sources:
@@ -231,6 +231,23 @@ class Credit:
 
         formatter.end()
 
+    def _get_property_any(self, subject, properties):
+        """
+        """
+        subject = a2uri(subject)
+
+        if not isinstance(properties, list):
+            properties = [properties]
+
+        for property in properties:
+            property = a2uri(property)
+
+            try:
+                value = next(self.g[rdflib.URIRef(subject):rdflib.URIRef(property):])
+                if value:
+                    return unicode(value)
+            except StopIteration:
+                pass
 
 class CreditFormatter(object):
     def begin(self):
