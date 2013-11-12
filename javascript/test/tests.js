@@ -248,11 +248,14 @@
             var tf = libcredit.textCreditFormatter();
             credit.format(tf, 10, i18n);
 
-            expect( tf.getText() ).to.be(
-                'main title. Källor:\n' +
-                    '    * http://subsrc-1/.\n' + 
-                    '    * http://subsrc-2/.'
-            );
+            var text = tf.getText();
+
+            expect( text === ('main title. Källor:\n' +
+                              '    * http://subsrc-1/.\n' + 
+                              '    * http://subsrc-2/.') ||
+                    text === ('main title. Källor:\n' +
+                              '    * http://subsrc-2/.\n' + 
+                              '    * http://subsrc-1/.') ).to.be.ok();
         });
     });
 })(libcredit);
