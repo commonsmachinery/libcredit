@@ -25,7 +25,7 @@ class TestCreditFormatter(libcredit.CreditFormatter):
         self.source_depth += 1
 
     def end(self):
-        if (self.source_depth > 2):
+        if (self.source_depth > 1):
             self.source_stack.pop()
         self.source_depth -= 1
 
@@ -33,7 +33,7 @@ class TestCreditFormatter(libcredit.CreditFormatter):
         if (self.source_depth > 1):
             self.source_stack.append(url)
         self.add_line('title', text, url)
-    
+
     def add_attrib(self, text, url):
         self.add_line('attrib', text, url)
 
@@ -42,10 +42,10 @@ class TestCreditFormatter(libcredit.CreditFormatter):
 
     def add_line(self, type, text, url):
         prefix = ''
-        
+
         if len(self.source_stack) > 0:
-            prefix = '<' + '> <'.join(self.source_stack) + '> '
-        
+            prefix = '<' + '> <'.join(self.source_stack[::-1]) + '> '
+
         self.output.append(prefix + type + ' "' + \
             (text if text else '') + '" <' + \
             (url if url else '') + '>')
