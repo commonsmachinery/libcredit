@@ -153,7 +153,10 @@ class LibCreditTests(unittest.TestCase):
         credit = load_credit('sources-uris', 'http://src/')
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
-        self.assertEqual(tf.get_text(),
-            u'main title. Källor:\n' + \
+        expected1 = u'main title. Källor:\n' + \
             '    * http://subsrc-1/.\n' + \
-            '    * http://subsrc-2/.')
+            '    * http://subsrc-2/.'
+        expected2 = u'main title. Källor:\n' + \
+            '    * http://subsrc-2/.\n' + \
+            '    * http://subsrc-1/.'
+        self.assertTrue(tf.get_text() == expected1 or tf.get_text() == expected2)
