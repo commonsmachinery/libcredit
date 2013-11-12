@@ -85,20 +85,24 @@ OG = rdflib.Namespace('http://ogp.me/ns#')
 
 
 def a2uri(obj):
+    """
+    Shorthand for rdflib.URIRef(obj). Used for converting strings
+    to rdflib URIs.
+    """
     if isinstance(obj, rdflib.URIRef):
         return obj
     elif isinstance(obj, basestring):
-        return rdflib.URIRef(obj)        
+        return rdflib.URIRef(obj)
     else:
         raise ValueError("Unrecognisable URI type for object: %s" % obj)
 
 def get_url(url):
     """
-    Return uri if it can be used as a URL,
+    Return url if it can be used as an URL,
     otherwise return None.
 
     Parameters:
-    url -- the license URL
+    url -- URL
     """
     url_re = "^https?:"
     if re.match(url_re, unicode(url)):
@@ -109,7 +113,7 @@ def get_url(url):
 class Credit(object):
     """
     Class for extracting credit information from RDF metadata
-    
+
     Keyword arguments:
     rdf -- rdflib graph or a string of RDF/XML to parse.
     subject -- URI for querying work in the graph
@@ -132,7 +136,7 @@ class Credit(object):
         # Title
         #
         self.title_url = get_url(self._get_property_any(subject, OG['url']))
-        
+
         if self.title_url is None:
             self.title_url = get_url(unicode(subject))
 
@@ -213,7 +217,7 @@ class Credit(object):
         Keyword arguments:
         formatter -- a CreditFormatter to use for output
         source_depth -- maximum depth for source works traversal
-        i18n - a gettext class with the desired language (domain "libcredit")
+        i18n -- a gettext class with the desired language (domain "libcredit")
         """
 
         markup = CREDIT_MARKUP[(
@@ -225,10 +229,10 @@ class Credit(object):
         if not markup:
             markup = ""
             #return # TODO: raise an exception instead?
-        
+
         if i18n:
             markup = i18n.ugettext(markup)
-            
+
         formatter.begin()
 
         for item in ITEM_RE.split(markup):
@@ -244,7 +248,7 @@ class Credit(object):
         if self.sources and source_depth > 0:
             formatter.begin_sources(i18n.ungettext(
                     'Source:', 'Sources:', len(self.sources)))
-            
+
             for s in self.sources:
                 formatter.begin_source()
                 s.format(formatter, source_depth - 1, i18n)
@@ -255,8 +259,6 @@ class Credit(object):
         formatter.end()
 
     def _get_property_any(self, subject, properties):
-        """
-        """
         subject = a2uri(subject)
 
         if not isinstance(properties, list):
@@ -273,28 +275,60 @@ class Credit(object):
                 pass
 
 class CreditFormatter(object):
+    """
+    Base class for credit formatter that doesn't do anything.
+    Override methods in this as applicable to the desired format.
+    """
+
     def begin(self):
+        """Called when the formatter begins printing credit for a source
+        or the entire work."""
         pass
+
     def end(self):
+        """Called when the formatter ends printing credit for a source
+        or the entire work."""
         pass
+
     def begin_sources(self, label=None):
+        "Called before printing the list of sources."
         pass
+
     def end_sources(self):
+        "Called when done printing the list of sources."
         pass
+
     def begin_source(self):
+        "Called before printing credit for a source and before begin()."
         pass
+
     def end_source(self):
+        "Called when done printing credit for a source and after end()."
         pass
+
     def add_title(self, text, url):
+        """Format the title for source or work.
+        URL should point to the work's origin an can be null."""
         pass
+
     def add_attrib(self, text, url):
+        """Format the attribution for source or work.
+        URL should point to the work's author an can be null."""
         pass
+
     def add_license(self, text, url):
+        """Format the work's license.
+        URL should point to the license an can be null."""
         pass
+
     def add_text(self, text):
+        "Add any text (e.g. punctuation) in the current context."
         pass
 
 class TextCreditFormatter(CreditFormatter):
+    """
+    Credit formatter that outputs credit as plain text.
+    """
     def __init__(self):
         self.text = u""
         self.depth = 0
@@ -336,7 +370,13 @@ class TextCreditFormatter(CreditFormatter):
         return self.text
 
 class HTMLCreditFormatter(CreditFormatter):
-    def __init__(self, document = None):
+    """
+    Credit formatter that outputs credit as HTML.
+
+    Keyword arguments:
+    document -- xml.minidom.Document instance used to create HTML elements.
+    """
+    def __init__(self, document=None):
         if document:
             self.doc = document
         else:
