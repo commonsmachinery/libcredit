@@ -269,6 +269,11 @@
                               getTextProperty(kb, subject, kb.sym('twitter:creator')));
             }
 
+            // Special case for flickr
+            if (!attribText && /^https?:\/\/www.flickr.com/.test(subject.uri)) {
+                attribText = getTextProperty(kb, subject, kb.sym('flickr_photos:by'));
+            }
+
             if (attribText && !attribURL) {
                 // Text creator might be a URL
                 attribURL = getURL(attribText);

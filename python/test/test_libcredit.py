@@ -136,6 +136,11 @@ class LibCreditTests(unittest.TestCase):
             ('twitter-creator', 'urn:src'),
         ])
 
+    def test_flickr(self):
+        self._test_credit_output([
+            ('flickr-photos-by', 'http://www.flickr.com/photos/somecreator/123/'),
+        ])
+
     def test_sources(self):
         self._test_credit_output([
             ('sources-uris', 'http://src/'),

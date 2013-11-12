@@ -234,6 +234,10 @@
         testCreditOutput('twitter-creator', 'urn:src');
     });
 
+    describe('Twitter', function () {
+        testCreditOutput('flickr-photos-by', 'http://www.flickr.com/photos/somecreator/123/');
+    });
+
     describe('Sources', function () {
         testCreditOutput('sources-uris', 'http://src/');
         testCreditOutput('sources-with-sources', 'http://src/');
