@@ -113,7 +113,7 @@
         
         m = url.match(ccLicenseURL);
         if (m) {
-            text = 'CC-';
+            text = 'CC ';
             text += m[1].toUpperCase();
             text += ' ';
             text += m[2];

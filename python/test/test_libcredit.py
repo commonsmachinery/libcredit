@@ -79,11 +79,11 @@ class LibCreditTests(unittest.TestCase):
 
     def test_license_label(self):
         self.assertEqual(libcredit.get_license_label('http://creativecommons.org/licenses/by-sa/3.0/'),
-            'CC-BY-SA 3.0 Unported')
+            'CC BY-SA 3.0 Unported')
         self.assertEqual(libcredit.get_license_label('http://creativecommons.org/licenses/by-nc/2.5/deed.en'),
-            'CC-BY-NC 2.5 Unported')
+            'CC BY-NC 2.5 Unported')
         self.assertEqual(libcredit.get_license_label('http://creativecommons.org/licenses/by/3.0/au/deed.en_US'),
-            'CC-BY 3.0 (AU)')
+            'CC BY 3.0 (AU)')
 
     def test_empty(self):
         credit = load_credit('nothing', 'urn:src')
@@ -136,8 +136,8 @@ class LibCreditTests(unittest.TestCase):
         tf = libcredit.TextCreditFormatter()
         credit.format(tf)
         self.assertEqual(tf.get_text(),
-            u'a title by name of attribution (CC-BY-SA 3.0 Unported). Source:\n' + \
-            '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported).')
+            u'a title by name of attribution (CC BY-SA 3.0 Unported). Source:\n' + \
+            '    * subsrc title by subsrc attribution (CC BY-NC-ND 3.0 Unported).')
 
     def test_i18n(self):
         i18n = gettext.GNUTranslations(open('../build/mo/sv/LC_MESSAGES/libcredit.mo'))
@@ -147,8 +147,8 @@ class LibCreditTests(unittest.TestCase):
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
         self.assertEqual(tf.get_text(),
-            u'a title av name of attribution (CC-BY-SA 3.0 Unported). Källa:\n' + \
-            '    * subsrc title av subsrc attribution (CC-BY-NC-ND 3.0 Unported).')
+            u'a title av name of attribution (CC BY-SA 3.0 Unported). Källa:\n' + \
+            '    * subsrc title av subsrc attribution (CC BY-NC-ND 3.0 Unported).')
 
         credit = load_credit('sources-uris', 'http://src/')
         tf = libcredit.TextCreditFormatter()

@@ -47,7 +47,7 @@ def get_license_label(url):
         m = re.match("https?:\/\/creativecommons.org\/licenses\/([-a-z]+)\/([0-9.]+)\/(?:([a-z]+)\/)?(?:deed\..*)?", url)
         if m:
             g = m.groups()
-            label = 'CC-%s %s %s' % (g[0].upper(), g[1], "(%s)" % g[2].upper() if g[2] else "Unported")
+            label = 'CC %s %s %s' % (g[0].upper(), g[1], "(%s)" % g[2].upper() if g[2] else "Unported")
     elif netloc == "artlibre.org":
         label = {
             "/licence/lal": "Licence Art Libre",

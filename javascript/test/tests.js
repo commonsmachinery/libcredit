@@ -150,17 +150,17 @@
     describe('License names', function () {
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by-sa/3.0/') ).to.be(
-                'CC-BY-SA 3.0 Unported'
+                'CC BY-SA 3.0 Unported'
             );
                 
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by-nc/2.5/deed.en') ).to.be(
-                'CC-BY-NC 2.5 Unported'
+                'CC BY-NC 2.5 Unported'
             );
                 
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by/3.0/au/deed.en_US') ).to.be(
-                'CC-BY 3.0 (AU)'
+                'CC BY 3.0 (AU)'
             );
     });         
         
@@ -211,8 +211,8 @@
             credit.format(tf);
 
             expect( tf.getText() ).to.be(
-                'a title by name of attribution (CC-BY-SA 3.0 Unported). Source:\n' +
-                    '    * subsrc title by subsrc attribution (CC-BY-NC-ND 3.0 Unported).'
+                'a title by name of attribution (CC BY-SA 3.0 Unported). Source:\n' +
+                    '    * subsrc title by subsrc attribution (CC BY-NC-ND 3.0 Unported).'
             );
         });
     });
@@ -237,8 +237,8 @@
             credit.format(tf, 10, i18n);
 
             expect( tf.getText() ).to.be(
-                'a title av name of attribution (CC-BY-SA 3.0 Unported). Källa:\n' +
-                    '    * subsrc title av subsrc attribution (CC-BY-NC-ND 3.0 Unported).'
+                'a title av name of attribution (CC BY-SA 3.0 Unported). Källa:\n' +
+                    '    * subsrc title av subsrc attribution (CC BY-NC-ND 3.0 Unported).'
             );
         });
 
