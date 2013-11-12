@@ -84,6 +84,18 @@ class LibCreditTests(unittest.TestCase):
             'CC BY-NC 2.5 Unported')
         self.assertEqual(libcredit.get_license_label('http://creativecommons.org/licenses/by/3.0/au/deed.en_US'),
             'CC BY 3.0 (AU)')
+        self.assertEqual(libcredit.get_license_label('http://creativecommons.org/publicdomain/zero/1.0/deed.fr'),
+            'CC0 1.0')
+        self.assertEqual(libcredit.get_license_label('http://creativecommons.org/publicdomain/mark/1.0/deed.de'),
+            'public domain')
+        self.assertEqual(libcredit.get_license_label('http://artlibre.org/licence/lal'),
+            'Free Art License 1.3')
+        self.assertEqual(libcredit.get_license_label('http://artlibre.org/licence/lal/en'),
+            'Free Art License 1.3')
+        self.assertEqual(libcredit.get_license_label('http://artlibre.org/licence/lal/licence-art-libre-12'),
+            'Free Art License 1.2')
+        self.assertEqual(libcredit.get_license_label('http://some/rights/statement'),
+            'http://some/rights/statement')
 
     def test_empty(self):
         credit = load_credit('nothing', 'urn:src')

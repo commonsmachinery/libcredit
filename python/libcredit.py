@@ -33,6 +33,12 @@ def get_i18n(languages = None):
 _i18n = get_i18n()
 
 
+_cc_license_url_re = re.compile("https?://creativecommons.org/licenses/([-a-z]+)/([0-9.]+)/(?:([a-z]+)/)?(?:deed\..*)?$")
+
+_cc_public_domain_url_re = re.compile("^https?://creativecommons.org/publicdomain/([a-z]+)/([0-9.]+)/(?:deed\..*)?$")
+
+_free_art_license_url_re = re.compile("^https?://artlibre.org/licence/lal(?:/([-a-z0-9]+))?$")
+
 def get_license_label(url):
     """
     Return a human-readable short name for a license.
@@ -41,25 +47,27 @@ def get_license_label(url):
     Parameters:
     url -- the license URL
     """
-    scheme, netloc, path = urlparse.urlparse(url)[:3]
-    label = url
-    if netloc == "creativecommons.org":
-        m = re.match("https?:\/\/creativecommons.org\/licenses\/([-a-z]+)\/([0-9.]+)\/(?:([a-z]+)\/)?(?:deed\..*)?", url)
-        if m:
-            g = m.groups()
-            label = 'CC %s %s %s' % (g[0].upper(), g[1], "(%s)" % g[2].upper() if g[2] else "Unported")
-    elif netloc == "artlibre.org":
-        label = {
-            "/licence/lal": "Licence Art Libre",
-            "/licence/lal/en": "Free Art License 1.3",
-            "/licence/lal/de": "Lizenz Freie Kunst",
-            "/licence/lal/es": "Licencia Arte Libre",
-            "/licence/lal/pt": "Licença da Arte Livre 1.3",
-            "/licence/lal/it": "Licenza Arte Libera",
-            "/licence/lal/pl": "Licencja Wolnej Sztuki 1.3",
-            "/licence/lal/licence-art-libre-12": "Licence Art Libre 1.2",
-        }.get(path)
-    return label
+
+    m = _cc_license_url_re.match(url)
+    if m:
+        g = m.groups()
+        return 'CC %s %s %s' % (g[0].upper(), g[1], "(%s)" % g[2].upper() if g[2] else "Unported")
+
+    m = _cc_public_domain_url_re.match(url)
+    if m:
+        g = m.groups()
+        if g[0] == 'zero':
+            return 'CC0 ' + g[1]
+        elif g[0] == 'mark':
+            return 'public domain'
+
+    m = _free_art_license_url_re.match(url)
+    if m:
+        g = m.groups()
+        return 'Free Art License %s' % ('1.2' if g[0] == 'licence-art-libre-12' else '1.3')
+
+    return url;
+
 
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)

@@ -148,6 +148,7 @@
     });
 
     describe('License names', function () {
+        // Regular CC
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by-sa/3.0/') ).to.be(
                 'CC BY-SA 3.0 Unported'
@@ -161,6 +162,40 @@
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by/3.0/au/deed.en_US') ).to.be(
                 'CC BY 3.0 (AU)'
+            );
+
+        // Public domain 
+        expect( libcredit.getLicenseName(
+            'http://creativecommons.org/publicdomain/zero/1.0/deed.fr') ).to.be(
+                'CC0 1.0'
+            );
+
+        expect( libcredit.getLicenseName(
+            'http://creativecommons.org/publicdomain/mark/1.0/deed.de') ).to.be(
+                'public domain'
+            );
+
+        // Free art license
+        expect( libcredit.getLicenseName(
+            'http://artlibre.org/licence/lal') ).to.be(
+                'Free Art License 1.3'
+            );
+        
+        expect( libcredit.getLicenseName(
+            'http://artlibre.org/licence/lal/en') ).to.be(
+                'Free Art License 1.3'
+            );
+
+        expect( libcredit.getLicenseName(
+            'http://artlibre.org/licence/lal/licence-art-libre-12') ).to.be(
+                'Free Art License 1.2'
+            );
+
+
+        // Unknown
+        expect( libcredit.getLicenseName(
+            'http://some/rights/statement' ) ).to.be(
+                'http://some/rights/statement'
             );
     });         
         

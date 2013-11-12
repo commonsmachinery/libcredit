@@ -49,7 +49,12 @@
 
 
     const ccLicenseURL = /^https?:\/\/creativecommons.org\/licenses\/([-a-z]+)\/([0-9.]+)\/(?:([a-z]+)\/)?(?:deed\..*)?$/;
-    
+
+    const ccPublicDomainURL = /^https?:\/\/creativecommons.org\/publicdomain\/([a-z]+)\/([0-9.]+)\/(?:deed\..*)?$/;
+
+    const freeArtLicenseURL = /^https?:\/\/artlibre.org\/licence\/lal(?:\/([-a-z0-9]+))?$/;
+
+
     var getTextProperty = function(kb, subject, predicate) {
         var objs, i;
 
@@ -118,9 +123,29 @@
             text += ' ';
             text += m[2];
             text += m[3] ? ' (' + m[3].toUpperCase() + ')' : ' Unported';
+
+            return text;
         }
 
-        return text ? text : url;
+        m = url.match(ccPublicDomainURL);
+        if (m) {
+            switch (m[1]) {
+            case 'zero':
+                return 'CC0 ' + m[2];
+
+            case 'mark':
+                return 'public domain';
+            }
+        }
+
+        m = url.match(freeArtLicenseURL);
+        if (m) {
+            text = 'Free Art License ';
+            text += (m[1] === 'licence-art-libre-12' ? '1.2' : '1.3');
+            return text;
+        }
+
+        return url;
     };
     libcredit.getLicenseName = getLicenseName;
 
