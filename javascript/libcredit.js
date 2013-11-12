@@ -104,6 +104,29 @@
     // Public API
     //
 
+    /* parseRDFXML(doc, [baseURI])
+     *
+     * Parse an RDF/XML document into a rdflib.js Formula object.
+     *
+     * Parameters:
+     *
+     * - xml: a DOM Document parsed with DOMParser or similar class
+     * - baseURI: the document base URI, or '' if omitted
+     **/
+    var parseRDFXML = function(doc, baseURI) {
+        var kb, parser;
+        kb = new $rdf.IndexedFormula();
+        parser = new $rdf.RDFParser(kb);
+
+        if (!baseURI) {
+            baseURI = '';
+        }
+        
+        parser.parse(doc, baseURI, kb.sym(baseURI));
+        return kb;
+    };
+    libcredit.parseRDFXML = parseRDFXML;
+
     /* getLicenseName(url)
      *
      * Return a human-readable short name for a license.
@@ -149,7 +172,7 @@
     };
     libcredit.getLicenseName = getLicenseName;
 
-    /* credit(rdf, [subjectURI])
+    /* credit(kb, [subjectURI])
      *
      * Return a new object that contain the credit information
      * extracted from the RDF metadata, or null if there are no 
@@ -157,17 +180,15 @@
      *
      * Parameters:
      *
-     * - rdf: an rdflib.js Formula instance, or a string of RDF/XML to
-     *   parse.
+     * - kb: an rdflib.js Formula instance, e.g. returned from
+     *   parseRDFXML().
      *
      * - subjectURI: the URI for the subject that the credit should be
      *   constructed for.  If null or omitted, the subject is located by
      *   querying the graph for <> <dc:source> ?subject.
      */
 
-    var credit = function(rdf, subjectURI) {
-        var kb;
-
+    var credit = function(kb, subjectURI) {
         var titleText = null;
         var titleURL = null;
         var attribText = null;
@@ -312,10 +333,6 @@
             // Did we manage to get anything that can make it into a credit?
             return (titleText || attribText || licenseText || sources.length > 0);
         };
-
-
-        // TODO: parse RDF
-        kb = rdf;
 
         if (!parse()) {
             return null;

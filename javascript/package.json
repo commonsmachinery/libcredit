@@ -19,13 +19,13 @@
 	"CC"
     ],
     "dependencies" : {
-	"rdflib" : "*",
-	"jed" : "*"
     },
     "devDependencies" : {
 	"mocha" : "*",
 	"expect.js" : "*",
 	"serve": "*"
+        "xmldom" : "*",
+	"jed" : "*"
     },
     "license": "GPLv2"
 }

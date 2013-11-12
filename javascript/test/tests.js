@@ -297,4 +297,28 @@
                               '    * http://subsrc-1/.') ).to.be.ok();
         });
     });
+
+
+    describe('Parse RDF/XML', function() {
+        it('should parse provided string', function() {
+            var xml = '<?xml version="1.0"?>' +
+                '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"' +
+                '         xmlns:dc="http://purl.org/dc/elements/1.1/">' +
+                '  <rdf:Description rdf:about="">' +
+                '    <dc:source rdf:resource="http://test/">' +
+                '  </rdf:Description>' +
+                '  <rdf:Description rdf:about="http://test/">' +
+                '    <dc:title>a title</dc:title>' +
+                '  </rdf:Description>' +
+                '</rdf:RDF>';
+
+            var doc = new xmldom.DOMParser().parseFromString(xml, 'text/xml');
+            
+            var credit = libcredit.credit(libcredit.parseRDFXML(doc));
+
+            expect( credit.getTitleText() ).to.be( 'a title' );
+            expect( credit.getTitleURL() ).to.be( 'http://test/' );
+        });
+    });
+
 })(libcredit);
