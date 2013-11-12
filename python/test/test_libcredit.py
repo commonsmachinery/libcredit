@@ -44,7 +44,7 @@ class TestCreditFormatter(libcredit.CreditFormatter):
         prefix = ''
 
         if len(self.source_stack) > 0:
-            prefix = '<' + '> <'.join(self.source_stack[::-1]) + '> '
+            prefix = '<' + '> <'.join(self.source_stack) + '> '
 
         self.output.append(prefix + type + ' "' + \
             (text if text else '') + '" <' + \
