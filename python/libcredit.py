@@ -220,8 +220,16 @@ class Credit(object):
             if self.attrib_url is None and flickr_by:
                 self.attrib_url = unicode(flickr_by)
 
+
         source_subjects = list(self.g[subject:DC['source']:]) + list(self.g[subject:DCTERMS['source']:])
-        self.sources = [Credit(rdf, subject=r) for r in source_subjects]
+        self.sources = []
+        for s in source_subjects:
+            if isinstance(s, rdflib.URIRef) or isinstance(s, rdflib.BNode):
+                self.sources.append(Credit(rdf, subject=s))
+            elif isinstance(s, rdflib.Literal):
+                url = get_url(s)
+                if url:
+                    self.sources.append(Credit(rdf, subject=s))
 
         # TODO: raise an exception if no credit info is found?
 

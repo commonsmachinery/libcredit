@@ -9,4 +9,5 @@
 <http://src/>
   dc:title "main title" ;
   dc:source <http://subsrc-1/> ;
-  dc:source "http://subsrc-2/" .
+  dc:source "http://subsrc-2/" ;
+  dc:source "ignore non-URLs" .

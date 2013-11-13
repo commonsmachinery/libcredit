@@ -201,7 +201,7 @@
         // it's own functions
 
         var addSources = function(subject, predicate) {
-            var srcObjs, i, src;
+            var srcObjs, i, src, url;
             
             srcObjs = kb.each(subject, predicate);
 
@@ -216,7 +216,10 @@
 
                 case 'literal':
                     // Accept URLs in literals too
-                    src = credit(kb, getURL(srcObjs[i].value));
+                    url = getURL(srcObjs[i].value);
+                    if (url) {
+                        src = credit(kb, url);
+                    }
                     break;
                 }
 
