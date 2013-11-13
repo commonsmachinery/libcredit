@@ -40,7 +40,7 @@ def get_i18n(languages = None):
 _i18n = get_i18n()
 
 
-_cc_license_url_re = re.compile("https?://creativecommons.org/licenses/([-a-z]+)/([0-9.]+)/(?:([a-z]+)/)?(?:deed\..*)?$")
+_cc_license_url_re = re.compile("^https?://creativecommons.org/licenses/([-a-z]+)/([0-9.]+)/(?:([a-z]+)/)?(?:deed\..*)?$")
 
 _cc_public_domain_url_re = re.compile("^https?://creativecommons.org/publicdomain/([a-z]+)/([0-9.]+)/(?:deed\..*)?$")
 
