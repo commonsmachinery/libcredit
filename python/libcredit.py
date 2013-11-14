@@ -14,11 +14,18 @@ import gettext
 import rdflib
 from xml.dom import minidom
 
+# py3k compatibility
 try:
     import urlparse
 except ImportError:
     import urllib.parse as urlparse
 
+# another compatibility hack
+try:
+    basestring = basestring
+except NameError:
+    basestring = str
+    unicode = str
 
 def get_i18n(languages = None):
     if languages is None:
@@ -207,10 +214,10 @@ class Credit(object):
             # could we just use /people/XXX/ as the last resort?
             # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
-            if self.attrib_text is None:
+            if self.attrib_text is None and flickr_by:
                 self.attrib_text = unicode(flickr_by)
 
-            if self.attrib_url is None:
+            if self.attrib_url is None and flickr_by:
                 self.attrib_url = unicode(flickr_by)
 
         source_subjects = list(self.g[subject:DC['source']:]) + list(self.g[subject:DCTERMS['source']:])
@@ -239,7 +246,7 @@ class Credit(object):
             #return # TODO: raise an exception instead?
 
         if i18n:
-            markup = i18n.ugettext(markup)
+            markup = i18n.gettext(markup)
 
         formatter.begin()
 
@@ -254,7 +261,7 @@ class Credit(object):
                 formatter.add_text(item)
 
         if self.sources and source_depth > 0:
-            formatter.begin_sources(i18n.ungettext(
+            formatter.begin_sources(i18n.ngettext(
                     'Source:', 'Sources:', len(self.sources)))
 
             for s in self.sources:
@@ -350,7 +357,7 @@ class TextCreditFormatter(CreditFormatter):
 
     def begin_sources(self, label=None):
         if label:
-            self.text += u" " + label
+            self.text += u" " + label.decode("utf-8")
         self.depth += 1
 
     def end_sources(self):
