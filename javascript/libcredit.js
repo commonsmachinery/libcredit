@@ -13,11 +13,24 @@
     var libcredit = {};
 
     // Namespace used in the code
-    const DC = $rdf.Namespace('http://purl.org/dc/elements/1.1/');
-    const DCTERMS = $rdf.Namespace('http://purl.org/dc/terms/');
-    const CC = $rdf.Namespace('http://creativecommons.org/ns#');
-    const XHTML = $rdf.Namespace('http://www.w3.org/1999/xhtml/vocab#');
-    const OG = $rdf.Namespace('http://ogp.me/ns#');
+    var DC;
+    var DCTERMS;
+    var CC;
+    var XHTML;
+    var OG;
+
+    // Keep our own reference to rdflib's $rdf in a env-independent way
+    var rdflib;
+
+    var rdflibSetup = function(r) {
+        rdflib = r;
+        
+        DC = rdflib.Namespace('http://purl.org/dc/elements/1.1/');
+        DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/');
+        CC = rdflib.Namespace('http://creativecommons.org/ns#');
+        XHTML = rdflib.Namespace('http://www.w3.org/1999/xhtml/vocab#');
+        OG = rdflib.Namespace('http://ogp.me/ns#');
+    };
 
     var getCreditLine = function(hasTitle, hasAttrib, hasLicense)
     {
@@ -115,8 +128,8 @@
      **/
     var parseRDFXML = function(doc, baseURI) {
         var kb, parser;
-        kb = new $rdf.IndexedFormula();
-        parser = new $rdf.RDFParser(kb);
+        kb = new rdflib.IndexedFormula();
+        parser = new rdflib.RDFParser(kb);
 
         if (!baseURI) {
             baseURI = '';
@@ -575,6 +588,7 @@
             exports = module.exports = libcredit;
         }
         exports.libcredit = libcredit;
+        rdflibSetup(require('rdflib'));
     }
     else {
         if (typeof define === 'function' && define.amd) {

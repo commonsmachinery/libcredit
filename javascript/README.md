@@ -8,13 +8,28 @@ toplevel libcredit directory.
 Installation
 ------------
 
+To get the latest development version, clone github repository:
+
+    git clone https://github.com/commonsmachinery/libcredit.git
+
+
+### Node.js
+
 You can install libcredit.js using npm:
 
     npm install libcredit
 
-To get the latest development version, clone github repository:
+However, libcredit depends on rdflib, and the current registry version
+(0.0.1) is broken.  Until a newer version is uploaded, it is
+recommended that you use this rdflib.js:
+https://github.com/commonsmachinery/rdflib.js/tree/support-node-xmldom
 
-    git clone https://github.com/commonsmachinery/libcredit.git
+To simplify things in the meantime, an unofficial 0.0.2 version is
+included, which can be included in this way:
+
+   npm install rdflib-0.0.2.tgz 
+
+
 
 Usage
 -----

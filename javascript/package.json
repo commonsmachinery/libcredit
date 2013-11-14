@@ -19,11 +19,12 @@
 	"CC"
     ],
     "dependencies" : {
+	"rdflib" : ">0.0.1"
     },
     "devDependencies" : {
 	"mocha" : "*",
 	"expect.js" : "*",
-	"serve": "*"
+	"serve": "*",
         "xmldom" : "*",
 	"jed" : "*"
     },
