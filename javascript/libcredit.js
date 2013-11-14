@@ -574,7 +574,72 @@
 
     var htmlCreditFormatter = function(document) {
         var that = creditFormatter();
+        var root, current;
+        var nodeStack = [];
 
+        root = current = document.createElement('div');
+
+        var startElement = function(type) {
+            var node = document.createElement(type);
+            nodeStack.push(current);
+            current.appendChild(node);
+            current = node;
+        };
+
+        var endElement = function() {
+            current = nodeStack.pop();
+        };
+
+        var addText = function(text) {
+            var node = document.createTextNode(text);
+            current.appendChild(node);
+        };
+
+        that.begin = function() {
+            startElement('p');  
+        };
+
+        that.end = function() {
+            endElement();
+        };
+
+        that.beginSources = function(label) {
+            if (label) {
+                addText(' ' + label);
+            }
+
+            startElement('ul');
+        };
+        
+        that.endSources = function() {
+            endElement();
+        };
+        
+        that.beginSource = function() {
+            startElement('li');
+        };
+
+        that.endSource = function() {
+            endElement();
+        };
+
+        that.addTitle = that.addAttrib = that.addLicense = function(text, url) {
+            if (url) {
+                startElement('a');
+                current.setAttribute('href', url);
+                addText(text);
+                endElement();
+            }
+            else {
+                addText(text);
+            }
+        };
+
+        that.addText = addText;
+
+        that.getRoot = function() {
+            return root;
+        };
 
         return that;
     };
