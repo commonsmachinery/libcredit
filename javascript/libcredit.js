@@ -657,10 +657,16 @@
     }
     else {
         if (typeof define === 'function' && define.amd) {
-            define('libcredit', function() {
+            define('libcredit', ['rdflib'], function(rdflib) {
+                rdflibSetup(rdflib);
                 return libcredit;
             });
         }
+        else {
+            // Assume that rdflib has been loaded for us
+            rdflibSetup($rdf);
+        }
+
         // Leak a global regardless of module system
         root['libcredit'] = libcredit;
     }
