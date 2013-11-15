@@ -66,20 +66,26 @@ dist-python:
 # Javascript
 #
 
+js-locales-dir := $(top-dir)/javascript/locales
 js-build-dir := $(build-dir)/libcredit.js
 js-build-locales-dir := $(js-build-dir)/locales
-js-build-test-dir := $(js-build-dir)/test
-js-dist-files = package.json libcredit.js Makefile test/common.js test/tests.js
+js-dist-files = package.json libcredit.js README.md
 
-build-javascript: $(js-build-locales-dir) $(js-build-test-dir) $(LANGUAGES:%=$(js-build-locales-dir)/%.json)
-	@for f in $(js-dist-files); do cp -v javascript/$$f $(js-build-dir)/$$f; done
+build-javascript: $(js-locales-dir) $(LANGUAGES:%=$(js-locales-dir)/%.json)
 
-$(js-build-locales-dir) $(js-build-test-dir):
+test-javascript: build-javascript
+	@$(MAKE) -C $(js-build-dir) dotest
+
+$(js-locales-dir):
 	mkdir -p $@
 
-$(js-build-locales-dir)/%.json: $(po-dir)/%.po
+$(js-locales-dir)/%.json: $(po-dir)/%.po
 	$(PO2JSON) $< > $@
 
 
-dist-javascript: build-javascript 
+dist-javascript: build-javascript
+	rm -rf $(js-build-dir)
+	mkdir -p $(js-build-dir) $(js-build-locales-dir)
+	@for f in $(js-dist-files); do cp -v $(top-dir)/javascript/$$f $(js-build-dir)/$$f; done
+	@for f in $(LANGUAGES:%=$(js-locales-dir)/%.json); do cp -v $$f $(js-build-locales-dir); done
 	cd $(js-build-dir) && $(NPM) pack && mv libcredit.js-*.*.*.tgz $(dist-dir)
