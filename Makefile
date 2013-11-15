@@ -7,7 +7,7 @@
 IMPL = python javascript
 
 # Translations (human languages)
-LANGUAGES = sv
+LANGUAGES = da ru sv
 
 
 #
