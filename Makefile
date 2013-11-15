@@ -28,6 +28,8 @@ build-dir := $(top-dir)/build
 dist-dir := $(top-dir)/dist
 po-dir := $(top-dir)/po
 
+common-dist-files = README.md LICENSE
+
 
 #
 # Main rules
@@ -74,7 +76,7 @@ dist-python:
 js-locales-dir := $(top-dir)/javascript/locales
 js-build-dir := $(build-dir)/libcredit.js
 js-build-locales-dir := $(js-build-dir)/locales
-js-dist-files = package.json libcredit.js README.md rdflib-0.0.2.tgz
+js-dist-files = package.json libcredit.js README.javascript.md rdflib-0.0.2.tgz
 
 build-javascript: $(js-locales-dir) $(LANGUAGES:%=$(js-locales-dir)/%.json)
 
@@ -91,6 +93,7 @@ $(js-locales-dir)/%.json: $(po-dir)/%.po
 dist-javascript: build-javascript
 	rm -rf $(js-build-dir)
 	mkdir -p $(js-build-dir) $(js-build-locales-dir)
+	@for f in $(common-dist-files); do cp -v $(top-dir)/$$f $(js-build-dir)/$$f; done
 	@for f in $(js-dist-files); do cp -v $(top-dir)/javascript/$$f $(js-build-dir)/$$f; done
 	@for f in $(LANGUAGES:%=$(js-locales-dir)/%.json); do cp -v $$f $(js-build-locales-dir); done
 	cd $(js-build-dir) && $(NPM) pack && mv libcredit.js-*.*.*.tgz $(dist-dir)
