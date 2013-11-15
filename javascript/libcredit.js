@@ -497,6 +497,33 @@
      *
      * Return a base credit formatter (that doesn't do anything).
      * Override methods in this as applicable to the desired format.
+     *
+     * Methods:
+     *
+     * begin() - called when the formatter begins printing credit for a source
+     *     or the entire work.
+     *
+     * end() - called when the formatter is done printing credit for a source
+     *     or the entire work.
+     *
+     * beginSources(label) - called before printing the list of sources.
+     *
+     * endSources() - called when done printing the list of sources.
+     *
+     * beginSource() - called before printing credit for a source and before begin.
+     *
+     * endSource() - called when done printing credit for a source and after end.
+     *
+     * addTitle(text, url) - format the title for source or work.
+     *     URL should point to the work's origin and can be null.
+     *
+     * addAttrib(text, url) - format the attribution for source or work.
+     *     URL should point to the work's author and can be null.
+     *
+     * addLicense(text, url) - format the work's license.
+     *     URL should point to the license and can be null.
+     *
+     * addText(text) - add any text (e.g. punctuation) in the current context.
      */
     var creditFormatter = function() {
         var that = {};
@@ -516,7 +543,14 @@
     };
     libcredit.creditFormatter = creditFormatter;
 
-
+    /** textCreditFormatter()
+     *
+     * Return a formatter that generates a plain text credit.
+     *
+     * Object method:
+     *
+     * getText(): return the generated text.
+     */
     var textCreditFormatter = function() {
         var that = creditFormatter();
 
@@ -572,6 +606,19 @@
     libcredit.textCreditFormatter = textCreditFormatter;
 
 
+    /** htmlCreditFormatter(document)
+     *
+     * Return a formatter that generates an HTML credit.
+     *
+     * Parameters:
+     *
+     * - document: the target HTML document, will be used to create
+     *   the HTML elements for the credit.
+     *
+     * Object method:
+     *
+     * getRoot(): return the root element of the generated credit.
+     */
     var htmlCreditFormatter = function(document) {
         var that = creditFormatter();
         var root, current;
