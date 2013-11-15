@@ -38,10 +38,12 @@ all: build-common $(IMPL:%=build-%)
 
 dist: dist-prepare-common $(IMPL:%=dist-%) dist-finish-common
 
+test: $(IMPL:%=test-%)
+
 clean:
 	rm -r $(build-dir) $(dist-dir)
 
-.PHONY: all dist clean
+.PHONY: all dist test clean 
 
 build-common:
 
@@ -57,6 +59,9 @@ dist-finish-common:
 
 build-python:
 	$(PYTHON) ./setup.py build
+
+test-python: build-python
+	@cd python; $(PYTHON) -m unittest discover
 
 dist-python:
 	$(PYTHON) ./setup.py sdist
@@ -74,7 +79,7 @@ js-dist-files = package.json libcredit.js README.md
 build-javascript: $(js-locales-dir) $(LANGUAGES:%=$(js-locales-dir)/%.json)
 
 test-javascript: build-javascript
-	@$(MAKE) -C $(js-build-dir) dotest
+	@$(MAKE) -C javascript dotest
 
 $(js-locales-dir):
 	mkdir -p $@
