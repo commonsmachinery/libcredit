@@ -67,9 +67,7 @@ CreditFormatter to get the idea of which methods to override.
 Running tests
 -------------
 
-To run the test suite, you need to clone libcredit from github to get
-the cross-implementation test cases.  Then:
-
+    python setup.py build
     cd python
     python -m unittest discover
 

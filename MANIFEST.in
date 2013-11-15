@@ -4,3 +4,7 @@ include python/README.python.md
 include po/POTFILES.in
 include po/libcredit-master.pot
 include po/*.po
+include python/test/*.py
+include testcases/README.md
+include testcases/*.ttl
+include testcases/*.out
