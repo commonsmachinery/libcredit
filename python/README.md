@@ -10,7 +10,7 @@ Installation
 
 You can install libcredit.py using pip:
 
-    pip install libcredit
+    pip install libcredit.py
 
 To get the latest development version, clone github repository:
 
@@ -66,6 +66,9 @@ CreditFormatter to get the idea of which methods to override.
 
 Running tests
 -------------
+
+To run the test suite, you need to clone libcredit from github to get
+the cross-implementation test cases.  Then:
 
     cd python
     python -m unittest discover
