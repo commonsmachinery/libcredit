@@ -74,7 +74,7 @@ dist-python:
 js-locales-dir := $(top-dir)/javascript/locales
 js-build-dir := $(build-dir)/libcredit.js
 js-build-locales-dir := $(js-build-dir)/locales
-js-dist-files = package.json libcredit.js README.md
+js-dist-files = package.json libcredit.js README.md rdflib-0.0.2.tgz
 
 build-javascript: $(js-locales-dir) $(LANGUAGES:%=$(js-locales-dir)/%.json)
 
