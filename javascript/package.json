@@ -19,7 +19,7 @@
 	"creative commons",
 	"CC"
     ],
-    "dependencies" : {
+    "optionalDependencies" : {
 	"rdflib" : ">0.0.1"
     },
     "devDependencies" : {
