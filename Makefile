@@ -28,7 +28,7 @@ build-dir := $(top-dir)/build
 dist-dir := $(top-dir)/dist
 po-dir := $(top-dir)/po
 
-common-dist-files = README.md LICENSE
+common-dist-files = README.md LICENSE NEWS.md
 
 
 #
@@ -76,7 +76,7 @@ dist-python:
 js-locales-dir := $(top-dir)/javascript/locales
 js-build-dir := $(build-dir)/libcredit.js
 js-build-locales-dir := $(js-build-dir)/locales
-js-dist-files = package.json libcredit.js README.javascript.md rdflib-0.0.2.tgz
+js-dist-files = package.json libcredit.js README.javascript.md
 
 build-javascript: $(js-locales-dir) $(LANGUAGES:%=$(js-locales-dir)/%.json)
 
