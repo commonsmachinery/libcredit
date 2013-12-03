@@ -177,3 +177,18 @@ class LibCreditTests(unittest.TestCase):
             '    * http://subsrc-2/.\n' + \
             '    * http://subsrc-1/.'
         self.assertTrue(tf.get_text() == expected1 or tf.get_text() == expected2)
+
+    def test_rdf_containers(self):
+        credit = load_credit('rdf-containers', 'http://src/')
+        tf = libcredit.TextCreditFormatter()
+        credit.format(tf)
+        self.assertEqual(tf.get_text(),
+            u'main title by creator1, creator2.')
+
+    def test_multiple_creators(self):
+        credit = load_credit('multiple-creators', 'http://src/')
+        tf = libcredit.TextCreditFormatter()
+        credit.format(tf)
+        expected1 = u'main title by creator1, creator2.'
+        expected2 = u'main title by creator2, creator1.'
+        self.assertTrue(tf.get_text() == expected1 or tf.get_text() == expected2)

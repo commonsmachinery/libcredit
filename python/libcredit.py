@@ -12,6 +12,7 @@ import sys
 import re
 import gettext
 import rdflib
+from rdflib.namespace import RDF
 from xml.dom import minidom
 
 # py3k compatibility
@@ -171,11 +172,15 @@ class Credit(object):
         self.attrib_url = get_url(self._get_property_any(subject, CC['attributionURL']))
 
         if self.attrib_text is None:
-            self.attrib_text = self._get_property_any(subject, [
+            creators = self._get_property_all(subject, [
                 DC['creator'],
                 DCTERMS['creator'],
-                'twitter:creator',
             ])
+            self.attrib_text = ", ".join(creators)
+
+        # fallback to twitter:creator is dc*:creator fails
+        if not self.attrib_text:
+            self.attrib_text = self._get_property_any(subject, ['twitter:creator'])
 
         if self.attrib_text is not None and self.attrib_url is None:
             self.attrib_url = get_url(self.attrib_text)
@@ -293,9 +298,47 @@ class Credit(object):
             try:
                 value = next(self.g[rdflib.URIRef(subject):rdflib.URIRef(property):])
                 if value:
-                    return unicode(value)
+                    if self._is_container(value):
+                        return self._parse_container(value)
+                    else:
+                        return unicode(value)
             except StopIteration:
                 pass
+
+    def _get_property_all(self, subject, properties):
+        subject = a2uri(subject)
+        result = []
+
+        if not isinstance(properties, list):
+            properties = [properties]
+
+        for property in properties:
+            property = a2uri(property)
+
+            for value in self.g[rdflib.URIRef(subject):rdflib.URIRef(property):]:
+                if self._is_container(value):
+                    result += self._parse_container(value)
+                else:
+                    result.append(unicode(value))
+
+        return result
+
+    def _is_container(self, subject):
+        if (subject, RDF.type, RDF.Alt) in self.g or \
+           (subject, RDF.type, RDF.Seq) in self.g or \
+           (subject, RDF.type, RDF.Bag) in self.g:
+            return True
+
+    def _parse_container(self, subject):
+        result = []
+        for item in rdflib.graph.Seq(self.g, subject):
+            result.append(unicode(item))
+        if (subject, RDF.type, RDF.Alt) in self.g:
+            return result[0]
+        else:
+            return result
+
+
 
 class CreditFormatter(object):
     """
