@@ -332,9 +332,10 @@
                     DC('creator'),
                     DCTERMS('creator')
                 ], true);
-                if (attribText)
-                    attribText = attribText.join(", ");
+                if (attribText && attribText.length == 1)
+                    attribText = attribText[0];
             }
+
             if (!attribText) {
                 attribText = getPropertyNew(kb, subject, kb.sym('twitter:creator'));
             }
@@ -476,7 +477,16 @@
                     break;
 
                 case '<attrib>':
-                    formatter.addAttrib(attribText, attribURL);
+                    if (Array.isArray(attribText)) {
+                        for (var a = 0; a < attribText.length; a++) {
+                            var attrib = attribText[a];
+                            formatter.addAttrib(attrib, null);
+                            if (a + 1 < attribText.length)
+                                formatter.addText(", ");
+                        }
+                    } else {
+                        formatter.addAttrib(attribText, attribURL);
+                    }
                     break;
 
                 case '<license>':
