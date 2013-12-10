@@ -1,3 +1,7 @@
+# 0.2 (unreleased)
+
+* Support RDF containers (rdf:Seq, rdf:Bag, rdf:Alt).
+* Support multiple creators per work.
 
 # 0.1 (2013-11-18)
 
