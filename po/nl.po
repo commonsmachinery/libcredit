@@ -35,7 +35,7 @@ msgid "Credit: <attrib>."
 msgstr "Credit: <attrib>."
 
 msgid "License: <license>."
-msgstr "License: <license>."
+msgstr "Licentie: <license>."
 
 msgid "Source:"
 msgid_plural "Sources:"
