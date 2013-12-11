@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) 2013 Commons Machinery
+# This file is distributed under the same license as the libcredit package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: libcredit\n"
+"Report-Msgid-Bugs-To: dev@commonsmachinery.se\n"
+"POT-Creation-Date: 2013-10-22 14:21+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Maarten Zeinstra <mz@kl.nl>\n"
+"Language-Team: Dutch <LL@li.org>\n"
+"Language: Dutch\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=N; plural=Y;"
+
+msgid "<title> by <attrib> (<license>)."
+msgstr "<title> door <attrib> (<license>)."
+
+msgid "<title> by <attrib>."
+msgstr "<title> door <attrib>."
+
+msgid "<title> (<license>)."
+msgstr "<title> (<license>)."
+
+msgid "<title>."
+msgstr "<title>."
+
+msgid "Credit: <attrib> (<license>)."
+msgstr "Credit: <attrib> (<license>)."
+
+msgid "Credit: <attrib>."
+msgstr "Credit: <attrib>."
+
+msgid "License: <license>."
+msgstr "License: <license>."
+
+msgid "Source:"
+msgid_plural "Sources:"
+msgstr[0] "Bron:"
+msgstr[1] "Bronnen:"
