@@ -69,7 +69,7 @@
 
     const freeArtLicenseURL = /^https?:\/\/artlibre.org\/licence\/lal(?:\/([-a-z0-9]+))?$/;
 
-    var getPropertyNew = function(kb, subject, predicates, returnSeq) {
+    var getProperty = function(kb, subject, predicates, returnSeq) {
         returnSeq = returnSeq || false;
         var result = [];
 
@@ -78,9 +78,12 @@
         }
 
         for (var p = 0; p < predicates.length; p++) {
+            // stop collecting values if we don't need to return a list
+            if (!returnSeq && result.length > 0)
+                return result[0];
+
             var predicate = predicates[p];
             var objs = kb.each(subject, predicate, null);
-            //result = null;
 
             for (var i = 0; i < objs.length; i++) {
                 if (objs[i].termType === 'literal') {
@@ -112,15 +115,13 @@
                     contents[predicates[p].value] = kb.any(subject, predicates[p]).value;
                 }
             }
+
             keys = [];
-            for (var key in contents) {
+            for (var key in contents)
                 keys.push(key);
-            }
-            // doesn't work. does rdflib respect the order of rdf:_n elements when parsing?
             keys.sort();
 
             if (kb.holds(subject, RDF('type'), RDF('Alt'))) {
-                //result = contents[keys[0]];
                 result.push(contents[keys[0]]);
             } else {
                 result = [];
@@ -299,14 +300,14 @@
             // Title
             //
 
-            titleText = getPropertyNew(kb, subject, [
+            titleText = getProperty(kb, subject, [
                 DC('title'),
                 DCTERMS('title'),
                 OG('title')
             ]);
 
             // An Open Graph URL is probably a very good URL to use
-            titleURL = getURL(getPropertyNew(kb, subject, OG('url')));
+            titleURL = getURL(getProperty(kb, subject, OG('url')));
 
             if (!titleURL) {
                 // If nothing else, try to use the subject URI
@@ -317,18 +318,17 @@
                 // Fall back on URL
                 titleText = titleURL;
             }
-            //titleURL = "http://example.com";
 
             //
             // Attribution
             //
 
-            attribText = getPropertyNew(kb, subject, CC('attributionName'));
-            attribURL = getPropertyNew(kb, subject, CC('attributionURL'));
+            attribText = getProperty(kb, subject, CC('attributionName'));
+            attribURL = getURL(getProperty(kb, subject, CC('attributionURL')));
 
             if (!attribText) {
                 // Try a creator attribute instead
-                attribText = getPropertyNew(kb, subject, [
+                attribText = getProperty(kb, subject, [
                     DC('creator'),
                     DCTERMS('creator')
                 ], true);
@@ -337,12 +337,12 @@
             }
 
             if (!attribText) {
-                attribText = getPropertyNew(kb, subject, kb.sym('twitter:creator'));
+                attribText = getProperty(kb, subject, kb.sym('twitter:creator'));
             }
 
             // Special case for flickr
             if (!attribText && /^https?:\/\/www.flickr.com/.test(subject.uri)) {
-                attribText = getPropertyNew(kb, subject, kb.sym('flickr_photos:by'));
+                attribText = getProperty(kb, subject, kb.sym('flickr_photos:by'));
             }
 
             if (attribText && !attribURL) {
@@ -359,7 +359,7 @@
             // License
             //
 
-            licenseURL = getURL(getPropertyNew(kb, subject, [
+            licenseURL = getURL(getProperty(kb, subject, [
                 XHTML('license'),
                 DCTERMS('license'),
                 CC('license')
@@ -371,7 +371,7 @@
 
             if (!licenseText) {
                 // Try to get a license text at least, even if the property isn't a URL
-                licenseText = getPropertyNew(kb, subject, [
+                licenseText = getProperty(kb, subject, [
                     DC('rights'),
                     XHTML('license')
                 ]);

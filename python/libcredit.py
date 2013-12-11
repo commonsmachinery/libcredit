@@ -176,7 +176,7 @@ class Credit(object):
                 DC['creator'],
                 DCTERMS['creator'],
             ])
-            #self.attrib_text = ", ".join(creators)
+
             if len(creators) == 1:
                 self.attrib_text = creators[0]
             else:
