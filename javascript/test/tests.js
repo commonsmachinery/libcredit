@@ -34,7 +34,7 @@
         var sourceStack = [];
         var sourceDepth = 0;
 
-        var add_line = function(type, text, url) {
+        var add_line = function(type, text, url, property) {
             var prefix = '';
 
             if (sourceStack.length) {
@@ -43,7 +43,8 @@
 
             that.output.push(prefix + type + ' "' +
                              (text ? text : '') + '" <' +
-                             (url ? url : '') + '>');
+                             (url ? url : '') + '> <' +
+                             (property ? property : '') + '>');
         };
 
 
@@ -64,20 +65,20 @@
             sourceDepth--;
         };
 
-        that.addTitle = function(text, url) {
+        that.addTitle = function(text, url, property) {
             if (sourceDepth > 1) {
                 sourceStack.push(url);
             }
 
-            add_line('title', text, url);
+            add_line('title', text, url, property);
         };
 
-        that.addAttrib = function(text, url) {
-            add_line('attrib', text, url);
+        that.addAttrib = function(text, url, property) {
+            add_line('attrib', text, url, property);
         };
 
-        that.addLicense = function(text, url) {
-            add_line('license', text, url);
+        that.addLicense = function(text, url, property) {
+            add_line('license', text, url, property);
         };
 
         return that;

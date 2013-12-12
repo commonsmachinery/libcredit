@@ -143,10 +143,10 @@ class Credit(object):
 
         if subject is None:
             # by the new convention, work is an object of a dc:source predicate for the about="" node
-            new_subject_uri = next(self.g[a2uri(''):DC['source']:])
-            subject = rdflib.term.URIRef(new_subject_uri)
+            subject = a2uri(next(self.g[a2uri(''):DC['source']:]))
         else:
-            subject = rdflib.term.URIRef(subject)
+            subject = a2uri(subject)
+        self.subject = subject
 
         #
         # Title
@@ -161,17 +161,19 @@ class Credit(object):
             DCTERMS['title'],
             OG['title'],
         ])
+        self.title_property = (DCTERMS['title'] if self.title_text else None)
 
-        if self.title_text is None:
+        if not self.title_text:
             self.title_text = self.title_url
 
         #
         # Attribution
         #
         self.attrib_text = self._get_property_any(subject, CC['attributionName'])
+        self.attrib_property = (CC['attributionName'] if self.attrib_text else None)
         self.attrib_url = get_url(self._get_property_any(subject, CC['attributionURL']))
 
-        if self.attrib_text is None:
+        if not self.attrib_text:
             creators = self._get_property_all(subject, [
                 DC['creator'],
                 DCTERMS['creator'],
@@ -187,6 +189,10 @@ class Credit(object):
         if not self.attrib_text:
             self.attrib_text = self._get_property_any(subject, ['twitter:creator'])
 
+        #  make things a little simpler by putting dc:creator into the semantics
+        if not self.attrib_property:
+            self.attrib_property = (DC['creator'] if self.attrib_text else None)
+
         if self.attrib_text and self.attrib_url is None:
             self.attrib_url = get_url(self.attrib_text)
 
@@ -196,11 +202,14 @@ class Credit(object):
         #
         # License
         #
-        self.license_url = get_url(self._get_property_any(subject, [
-            XHV['license'],
-            CC['license'],
-            DCTERMS['license'],
-        ]))
+        self.license_url = get_url(self._get_property_any(subject, XHV['license']))
+        self.license_property = (XHV['license'] if self.license_url else None)
+        if not self.license_url:
+            self.license_url = get_url(self._get_property_any(subject, CC['license']))
+            self.license_property = (CC['license'] if self.license_url else None)
+        if not self.license_url:
+            self.license_url = get_url(self._get_property_any(subject, DCTERMS['license']))
+            self.license_property = (DCTERMS['license'] if self.license_url else None)
 
         if self.license_url:
             self.license_text = get_license_label(self.license_url)
@@ -208,10 +217,11 @@ class Credit(object):
             self.license_text = None
 
         if self.license_text is None:
-            self.license_text = self._get_property_any(subject, [
-                DC['rights'],
-                XHV['license'],
-            ])
+            self.license_text = self._get_property_any(subject, DC['rights'])
+            self.license_property = (DC['rights'] if self.license_text else None)
+            if not self.license_text:
+                self.license_text = self._get_property_any(subject, XHV['license'])
+                self.license_property = (XHV['license'] if self.license_text else None)
 
         # flickr special cases
         # flickr_photos:by is used by flickr for the same purpose as attribution URL
@@ -230,7 +240,6 @@ class Credit(object):
             if not self.attrib_url and flickr_by:
                 self.attrib_url = unicode(flickr_by)
 
-
         source_subjects = list(self.g[subject:DC['source']:]) + list(self.g[subject:DCTERMS['source']:])
         self.sources = []
         for s in source_subjects:
@@ -241,9 +250,13 @@ class Credit(object):
                 if url:
                     self.sources.append(Credit(rdf, subject=s))
 
+        self.attrib_property = unicode(self.attrib_property) if self.attrib_property else None
+        self.title_property = unicode(self.title_property) if self.title_property else None
+        self.license_property = unicode(self.license_property) if self.license_property else None
+
         # TODO: raise an exception if no credit info is found?
 
-    def format(self, formatter, source_depth = 1, i18n = _i18n):
+    def format(self, formatter, source_depth=-1, i18n=_i18n, subject_uri=None):
         """
         Create human-readable credit with the given formatter.
 
@@ -266,11 +279,13 @@ class Credit(object):
         if i18n:
             markup = i18n.gettext(markup)
 
-        formatter.begin()
+        formatter.begin(subject_uri=subject_uri)
 
         for item in ITEM_RE.split(markup):
             if item == '<title>':
-                formatter.add_title(self.title_text, self.title_url)
+                formatter.add_title(self.title_text,
+                    self.title_url,
+                    self.title_property)
             elif item == '<attrib>':
                 if isinstance(self.attrib_text, (list, tuple)):
                     for a, attrib in enumerate(self.attrib_text):
@@ -278,24 +293,31 @@ class Credit(object):
                         if a+1 < len(self.attrib_text):
                             formatter.add_text(", ")
                 else:
-                    formatter.add_attrib(self.attrib_text, self.attrib_url)
+                    formatter.add_attrib(self.attrib_text,
+                        self.attrib_url,
+                        self.attrib_property)
             elif item == '<license>':
-                formatter.add_license(self.license_text, self.license_url)
+                formatter.add_license(self.license_text,
+                    self.license_url,
+                    self.license_property)
             else:
                 formatter.add_text(item)
 
-        if self.sources and source_depth > 0:
+        if self.sources and source_depth != 0:
             formatter.begin_sources(i18n.ngettext(
                     'Source:', 'Sources:', len(self.sources)))
 
             for s in self.sources:
                 formatter.begin_source()
-                s.format(formatter, source_depth - 1, i18n)
+                s.format(formatter, source_depth - 1, i18n, s.get_subject_uri())
                 formatter.end_source()
 
             formatter.end_sources()
 
         formatter.end()
+
+    def get_subject_uri(self):
+        return unicode(self.subject)
 
     def _get_property_any(self, subject, properties):
         subject = a2uri(subject)
@@ -357,7 +379,7 @@ class CreditFormatter(object):
     Override methods in this as applicable to the desired format.
     """
 
-    def begin(self):
+    def begin(self, subject_uri=None):
         """Called when the formatter begins printing credit for a source
         or the entire work."""
         pass
@@ -383,17 +405,17 @@ class CreditFormatter(object):
         "Called when done printing credit for a source and after end()."
         pass
 
-    def add_title(self, text, url):
+    def add_title(self, text, url, property=None):
         """Format the title for source or work.
         URL should point to the work's origin an can be null."""
         pass
 
-    def add_attrib(self, text, url):
+    def add_attrib(self, text, url, property=None):
         """Format the attribution for source or work.
         URL should point to the work's author an can be null."""
         pass
 
-    def add_license(self, text, url):
+    def add_license(self, text, url, property=None):
         """Format the work's license.
         URL should point to the license an can be null."""
         pass
@@ -410,7 +432,7 @@ class TextCreditFormatter(CreditFormatter):
         self.text = u""
         self.depth = 0
 
-    def begin(self):
+    def begin(self, subject_uri=None):
         if self.depth == 0:
             self.text = u""
 
@@ -431,13 +453,13 @@ class TextCreditFormatter(CreditFormatter):
     def end_source(self):
         pass
 
-    def add_title(self, text, url):
+    def add_title(self, text, url, property=None):
         self.text += text
 
-    def add_attrib(self, text, url):
+    def add_attrib(self, text, url, property=None):
         self.text += text
 
-    def add_license(self, text, url):
+    def add_license(self, text, url, property=None):
         self.text += str(text)
 
     def add_text(self, text):
@@ -460,24 +482,35 @@ class HTMLCreditFormatter(CreditFormatter):
             self.doc = minidom.Document()
         self.root = None
         self.node_stack = []
+        self.subject_stack = []
         self.depth = 0
 
-    def begin(self):
+    def begin(self, subject_uri=None):
         if self.depth == 0:
             self.root = self.doc.createElement('div')
             self.node_stack.append(self.root)
             self.doc.appendChild(self.root)
+
         node = self.doc.createElement('p')
         self.node_stack[-1].appendChild(node)
         self.node_stack.append(node)
 
+        if subject_uri:
+            node.attributes['about'] = subject_uri
+
+        self.subject_stack.append(subject_uri)
+
     def end(self):
         self.node_stack.pop()
+        self.subject_stack.pop()
 
     def begin_sources(self, label=None):
         if label:
             self.add_text(" " + label)
         node = self.doc.createElement('ul')
+        if self.subject_stack[0]:
+            node.attributes['about'] = self.subject_stack[-1]
+            node.attributes['rel'] = unicode(DC['source'])
         self.node_stack[-1].appendChild(node)
         self.node_stack.append(node)
         self.depth += 1
@@ -494,32 +527,31 @@ class HTMLCreditFormatter(CreditFormatter):
     def end_source(self):
         self.node_stack.pop()
 
-    def add_title(self, text, url=None):
+    def add_title(self, text, url=None, property=None):
+        self.add_impl(text, url, property)
+
+    def add_attrib(self, text, url=None, property=None):
+        self.add_impl(text, url, property)
+
+    def add_license(self, text, url=None, property=None):
+        self.add_impl(text, url, property)
+
+    def add_impl(self, text, url=None, property=None):
         if url:
-            self.add_url(text, url)
+            a = self.doc.createElement('a')
+            a.attributes['href'] = url
+            if property and self.subject_stack[-1] and self.subject_stack[0]:
+                a.attributes['property'] = property
+            a.appendChild(self.doc.createTextNode(text))
+            self.node_stack[-1].appendChild(a)
         else:
-            self.add_text(text)
-
-    def add_attrib(self, text, url):
-        if url:
-            self.add_url(text, url)
-        else:
-            self.add_text(text)
-
-    def add_license(self, text, url):
-        if url:
-            self.add_url(text, url)
-        else:
-            self.add_text(text)
-
-    def add_url(self, text, url):
-        a = self.doc.createElement('a')
-        a.attributes['href'] = url
-        a.appendChild(self.doc.createTextNode(text))
-        self.node_stack[-1].appendChild(a)
-
-    def add_text(self, text):
-        self.node_stack[-1].appendChild(self.doc.createTextNode(text))
+            if property and self.subject_stack[-1] and self.subject_stack[0]:
+                span = self.doc.createElement('span')
+                span.attributes['property'] = property
+                span.appendChild(self.doc.createTextNode(text))
+                self.node_stack[-1].appendChild(span)
+            else:
+                self.node_stack[-1].appendChild(self.doc.createTextNode(text))
 
     def get_root(self):
         return self.root

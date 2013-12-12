@@ -19,7 +19,7 @@ class TestCreditFormatter(libcredit.CreditFormatter):
         self.source_stack = []
         self.source_depth = 0
 
-    def begin(self):
+    def begin(self, subject_uri=None):
         if (self.source_depth == 0):
             self.output = []
         self.source_depth += 1
@@ -29,18 +29,18 @@ class TestCreditFormatter(libcredit.CreditFormatter):
             self.source_stack.pop()
         self.source_depth -= 1
 
-    def add_title(self, text, url):
+    def add_title(self, text, url, property=None):
         if (self.source_depth > 1):
             self.source_stack.append(url)
-        self.add_line('title', text, url)
+        self.add_line('title', text, url, property)
 
-    def add_attrib(self, text, url):
-        self.add_line('attrib', text, url)
+    def add_attrib(self, text, url, property=None):
+        self.add_line('attrib', text, url, property)
 
-    def add_license(self, text, url):
-        self.add_line('license', text, url)
+    def add_license(self, text, url, property=None):
+        self.add_line('license', text, url, property)
 
-    def add_line(self, type, text, url):
+    def add_line(self, type, text, url, property):
         prefix = ''
 
         if len(self.source_stack) > 0:
@@ -48,7 +48,8 @@ class TestCreditFormatter(libcredit.CreditFormatter):
 
         self.output.append(prefix + type + ' "' + \
             (text if text else '') + '" <' + \
-            (url if url else '') + '>')
+            (url if url else '') + '> <' + \
+            (property if property else '') + '>')
 
 def load_credit(filename, source_uri):
     g = rdflib.Graph()
