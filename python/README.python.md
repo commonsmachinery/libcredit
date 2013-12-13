@@ -56,6 +56,8 @@ Additionally, `credit.format` accepts the following arguments:
     - formatter -- a CreditFormatter to use for output
     - source_depth -- maximum depth for source works traversal
     - i18n -- a gettext class with the desired language (domain "libcredit")
+    - subject_uri -- will be used to provide semantic markup in formatters
+      which support property semantics.
 
 Writing your own formatters
 ---------------------------

@@ -1,1 +1,1 @@
-attrib "name of attribution" <http://attrib/> <http://creativecommons.org/ns#attributionName>
+attrib "name of attribution" <http://attrib/> <http://creativecommons.org/ns#attributionName> <http://creativecommons.org/ns#attributionURL>

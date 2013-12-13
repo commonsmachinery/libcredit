@@ -126,6 +126,16 @@ def get_url(url):
     else:
         return None
 
+class CreditToken(object):
+    """
+    An object for storing title, attribution or license text and semantics.
+    """
+    def __init__(self, text=None, url=None, text_property=None, url_property=None):
+        self.text = text
+        self.url = url
+        self.text_property = text_property
+        self.url_property = url_property
+
 class Credit(object):
     """
     Class for extracting credit information from RDF metadata
@@ -148,83 +158,57 @@ class Credit(object):
             subject = a2uri(subject)
         self.subject = subject
 
+        self.title = CreditToken()
+        self.attrib = CreditToken()
+        self.license = CreditToken()
+
         #
         # Title
         #
-        self.title_url = get_url(self._get_property_any(subject, OG['url']))
 
-        if self.title_url is None:
-            self.title_url = get_url(unicode(subject))
+        self.title.url = get_url(self._get_property_any(subject, OG['url']))
 
-        self.title_text = self._get_property_any(subject, [
+        if self.title.url is None:
+            self.title.url = get_url(unicode(subject))
+
+        self.title.text = self._get_property_any(subject, [
             DC['title'],
             DCTERMS['title'],
             OG['title'],
         ])
-        self.title_property = (DCTERMS['title'] if self.title_text else None)
+        self.title.text_property = (DC['title'] if self.title.text else None)
 
-        if not self.title_text:
-            self.title_text = self.title_url
+        if not self.title.text:
+            self.title.text = self.title.url
 
         #
         # Attribution
         #
-        self.attrib_text = self._get_property_any(subject, CC['attributionName'])
-        self.attrib_property = (CC['attributionName'] if self.attrib_text else None)
-        self.attrib_url = get_url(self._get_property_any(subject, CC['attributionURL']))
+        self.attrib.text = self._get_property_any(subject, CC['attributionName'])
+        if self.attrib.text:
+            self.attrib.text_property = CC['attributionName']
+        self.attrib.url = get_url(self._get_property_any(subject, CC['attributionURL']))
+        if self.attrib.url:
+            self.attrib.url_property = CC['attributionURL']
 
-        if not self.attrib_text:
+        if not self.attrib.text:
             creators = self._get_property_all(subject, [
                 DC['creator'],
                 DCTERMS['creator'],
             ])
 
             if len(creators) == 1:
-                self.attrib_text = creators[0]
+                self.attrib.text = creators[0]
             else:
                 # save the full list of creators for credit formatter
-                self.attrib_text = creators
+                self.attrib.text = creators
 
         # fallback to twitter:creator is dc*:creator fails
-        if not self.attrib_text:
-            self.attrib_text = self._get_property_any(subject, ['twitter:creator'])
+        if not self.attrib.text:
+            self.attrib.text = self._get_property_any(subject, ['twitter:creator'])
 
-        #  make things a little simpler by putting dc:creator into the semantics
-        if not self.attrib_property:
-            self.attrib_property = (DC['creator'] if self.attrib_text else None)
-
-        if self.attrib_text and self.attrib_url is None:
-            self.attrib_url = get_url(self.attrib_text)
-
-        if not self.attrib_text:
-            self.attrib_text = self.attrib_url
-
-        #
-        # License
-        #
-        self.license_url = get_url(self._get_property_any(subject, XHV['license']))
-        self.license_property = (XHV['license'] if self.license_url else None)
-        if not self.license_url:
-            self.license_url = get_url(self._get_property_any(subject, CC['license']))
-            self.license_property = (CC['license'] if self.license_url else None)
-        if not self.license_url:
-            self.license_url = get_url(self._get_property_any(subject, DCTERMS['license']))
-            self.license_property = (DCTERMS['license'] if self.license_url else None)
-
-        if self.license_url:
-            self.license_text = get_license_label(self.license_url)
-        else:
-            self.license_text = None
-
-        if self.license_text is None:
-            self.license_text = self._get_property_any(subject, DC['rights'])
-            self.license_property = (DC['rights'] if self.license_text else None)
-            if not self.license_text:
-                self.license_text = self._get_property_any(subject, XHV['license'])
-                self.license_property = (XHV['license'] if self.license_text else None)
-
-        # flickr special cases
-        # flickr_photos:by is used by flickr for the same purpose as attribution URL
+        # flickr_photos:by seems to be used by flickr for the same purpose
+        # that we use cc:attributionURL for, should that go to attributionURL instead?
         if urlparse.urlparse(str(subject))[1] == "www.flickr.com":
             try:
                 flickr_by = next(self.g[subject:a2uri(u'flickr_photos:by')])
@@ -234,11 +218,41 @@ class Credit(object):
             # could we just use /people/XXX/ as the last resort?
             # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
-            if not self.attrib_text and flickr_by:
-                self.attrib_text = unicode(flickr_by)
+            if not self.attrib.text and flickr_by:
+                self.attrib.text = unicode(flickr_by)
 
-            if not self.attrib_url and flickr_by:
-                self.attrib_url = unicode(flickr_by)
+        #  make things a little simpler by putting dc:creator into the semantics
+        if not self.attrib.text_property:
+            self.attrib.text_property = (DC['creator'] if self.attrib.text else None)
+
+        if self.attrib.text and self.attrib.url is None:
+            self.attrib.url = get_url(self.attrib.text)
+
+        if not self.attrib.text:
+            self.attrib.text = self.attrib.url
+
+        #
+        # License
+        #
+
+        self.license.url = get_url(self._get_property_any(subject, [
+            XHV['license'],
+            CC['license'],
+            DCTERMS['license'],
+        ]))
+        self.license.url_property = (XHV['license'] if self.license.url else None)
+
+        if self.license.url:
+            self.license.text = get_license_label(self.license.url)
+        else:
+            self.license.text = None
+
+        if self.license.text is None:
+            self.license.text = self._get_property_any(subject, DC['rights'])
+            self.license.text_property = (DC['rights'] if self.license.text else None)
+            if not self.license.text:
+                self.license.text = self._get_property_any(subject, XHV['license'])
+                self.license.text_property = (XHV['license'] if self.license.text else None)
 
         source_subjects = list(self.g[subject:DC['source']:]) + list(self.g[subject:DCTERMS['source']:])
         self.sources = []
@@ -250,13 +264,17 @@ class Credit(object):
                 if url:
                     self.sources.append(Credit(rdf, subject=s))
 
-        self.attrib_property = unicode(self.attrib_property) if self.attrib_property else None
-        self.title_property = unicode(self.title_property) if self.title_property else None
-        self.license_property = unicode(self.license_property) if self.license_property else None
+
+        self.title.url_property = unicode(self.title.url_property) if self.title.url_property else None
+        self.title.text_property = unicode(self.title.text_property) if self.title.text_property else None
+        self.attrib.url_property = unicode(self.attrib.url_property) if self.attrib.url_property else None
+        self.attrib.text_property = unicode(self.attrib.text_property) if self.attrib.text_property else None
+        self.license.url_property = unicode(self.license.url_property) if self.license.url_property else None
+        self.license.text_property = unicode(self.license.text_property) if self.license.text_property else None
 
         # TODO: raise an exception if no credit info is found?
 
-    def format(self, formatter, source_depth=-1, i18n=_i18n, subject_uri=None):
+    def format(self, formatter, source_depth=1, i18n=_i18n, subject_uri=None):
         """
         Create human-readable credit with the given formatter.
 
@@ -267,9 +285,9 @@ class Credit(object):
         """
 
         markup = CREDIT_MARKUP[(
-            bool(self.title_text),
-            bool(self.attrib_url) or bool(self.attrib_text),
-            bool(self.license_url) or bool(self.license_text)
+            bool(self.title.text),
+            bool(self.attrib.url) or bool(self.attrib.text),
+            bool(self.license.url) or bool(self.license.text)
         )]
 
         if not markup:
@@ -283,23 +301,18 @@ class Credit(object):
 
         for item in ITEM_RE.split(markup):
             if item == '<title>':
-                formatter.add_title(self.title_text,
-                    self.title_url,
-                    self.title_property)
+                formatter.add_title(self.title)
             elif item == '<attrib>':
-                if isinstance(self.attrib_text, (list, tuple)):
-                    for a, attrib in enumerate(self.attrib_text):
-                        formatter.add_attrib(attrib, None)
-                        if a+1 < len(self.attrib_text):
+                if isinstance(self.attrib.text, (list, tuple)):
+                    for a, author in enumerate(self.attrib.text):
+                        attrib = CreditToken(text=author)
+                        formatter.add_attrib(attrib)
+                        if a + 1 < len(self.attrib.text):
                             formatter.add_text(", ")
                 else:
-                    formatter.add_attrib(self.attrib_text,
-                        self.attrib_url,
-                        self.attrib_property)
+                    formatter.add_attrib(self.attrib)
             elif item == '<license>':
-                formatter.add_license(self.license_text,
-                    self.license_url,
-                    self.license_property)
+                formatter.add_license(self.license)
             else:
                 formatter.add_text(item)
 
@@ -405,19 +418,37 @@ class CreditFormatter(object):
         "Called when done printing credit for a source and after end()."
         pass
 
-    def add_title(self, text, url, property=None):
+    def add_title(self, token):
         """Format the title for source or work.
-        URL should point to the work's origin an can be null."""
+          token - a convenience object used to pass title information to the formatter.
+          It always contains the following members:
+          text - textual representation of the title.
+          url - points to the work and can be null.
+          textProperty - URI of the text property (for semantics-aware formatters).
+          urlproperty - URI or the url property (for semantics-aware formatters).
+        """
         pass
 
-    def add_attrib(self, text, url, property=None):
+    def add_attrib(self, token):
         """Format the attribution for source or work.
-        URL should point to the work's author an can be null."""
+          token - a convenience object used to pass attribution information to the formatter.
+          It always contains the following members:
+          text - textual representation of attribution.
+          url - points to the author of the work and can be null.
+          textProperty - URI of the text property (for semantics-aware formatters).
+          urlproperty - URI or the url property (for semantics-aware formatters).
+        """
         pass
 
-    def add_license(self, text, url, property=None):
+    def add_license(self, token):
         """Format the work's license.
-        URL should point to the license an can be null."""
+          token - a convenience object used to pass license information to the formatter.
+          It always contains the following members:
+          text - textual representation of the license.
+          url - points to the work's license and can be null.
+          textProperty - URI of the text property (for semantics-aware formatters).
+          urlproperty - URI or the url property (for semantics-aware formatters).
+        """
         pass
 
     def add_text(self, text):
@@ -453,14 +484,14 @@ class TextCreditFormatter(CreditFormatter):
     def end_source(self):
         pass
 
-    def add_title(self, text, url, property=None):
-        self.text += text
+    def add_title(self, token):
+        self.text += token.text
 
-    def add_attrib(self, text, url, property=None):
-        self.text += text
+    def add_attrib(self, token):
+        self.text += token.text
 
-    def add_license(self, text, url, property=None):
-        self.text += str(text)
+    def add_license(self, token):
+        self.text += token.text
 
     def add_text(self, text):
         self.text += text
@@ -508,7 +539,7 @@ class HTMLCreditFormatter(CreditFormatter):
         if label:
             self.add_text(" " + label)
         node = self.doc.createElement('ul')
-        if self.subject_stack[0]:
+        if self.subject_stack[0] and self.subject_stack[-1]:
             node.attributes['about'] = self.subject_stack[-1]
             node.attributes['rel'] = unicode(DC['source'])
         self.node_stack[-1].appendChild(node)
@@ -527,31 +558,35 @@ class HTMLCreditFormatter(CreditFormatter):
     def end_source(self):
         self.node_stack.pop()
 
-    def add_title(self, text, url=None, property=None):
-        self.add_impl(text, url, property)
+    def add_title(self, token):
+        self.add_impl(token)
 
-    def add_attrib(self, text, url=None, property=None):
-        self.add_impl(text, url, property)
+    def add_attrib(self, token):
+        self.add_impl(token)
 
-    def add_license(self, text, url=None, property=None):
-        self.add_impl(text, url, property)
+    def add_license(self, token):
+        self.add_impl(token)
 
-    def add_impl(self, text, url=None, property=None):
-        if url:
+    def add_impl(self, token):
+        if token.url:
             a = self.doc.createElement('a')
-            a.attributes['href'] = url
-            if property and self.subject_stack[-1] and self.subject_stack[0]:
-                a.attributes['property'] = property
-            a.appendChild(self.doc.createTextNode(text))
+            a.attributes['href'] = token.url
+            if self.subject_stack[0] and self.subject_stack[-1]:
+                if token.url_property:
+                    a.attributes['rel'] = token.url_property
+                elif token.text_property:
+                    a.attributes['property'] = token.text_property
+            a.appendChild(self.doc.createTextNode(token.text))
             self.node_stack[-1].appendChild(a)
         else:
-            if property and self.subject_stack[-1] and self.subject_stack[0]:
-                span = self.doc.createElement('span')
-                span.attributes['property'] = property
-                span.appendChild(self.doc.createTextNode(text))
-                self.node_stack[-1].appendChild(span)
-            else:
-                self.node_stack[-1].appendChild(self.doc.createTextNode(text))
+            span = self.doc.createElement('span')
+            if self.subject_stack[0] and self.subject_stack[-1] and token.text_property:
+                span.attributes['property'] = token.text_property
+            span.appendChild(self.doc.createTextNode(token.text))
+            self.node_stack[-1].appendChild(span)
+
+    def add_text(self, text):
+        self.node_stack[-1].appendChild(self.doc.createTextNode(text))
 
     def get_root(self):
         return self.root

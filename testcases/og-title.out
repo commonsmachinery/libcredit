@@ -1,1 +1,1 @@
-title "a title" <> <http://purl.org/dc/terms/title>
+title "a title" <> <http://purl.org/dc/elements/1.1/title> <>

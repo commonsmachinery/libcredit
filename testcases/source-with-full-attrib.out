@@ -1,6 +1,6 @@
-title "a title" <http://src/> <http://purl.org/dc/terms/title>
-attrib "name of attribution" <http://attrib/> <http://creativecommons.org/ns#attributionName>
-license "CC BY-SA 3.0 Unported" <http://creativecommons.org/licenses/by-sa/3.0/> <http://www.w3.org/1999/xhtml/vocab#license>
-<http://subsrc/> title "subsrc title" <http://subsrc/> <http://purl.org/dc/terms/title>
-<http://subsrc/> attrib "subsrc attribution" <http://subsrc/attrib/> <http://creativecommons.org/ns#attributionName>
-<http://subsrc/> license "CC BY-NC-ND 3.0 Unported" <http://creativecommons.org/licenses/by-nc-nd/3.0/> <http://www.w3.org/1999/xhtml/vocab#license>
+title "a title" <http://src/> <http://purl.org/dc/elements/1.1/title> <>
+attrib "name of attribution" <http://attrib/> <http://creativecommons.org/ns#attributionName> <http://creativecommons.org/ns#attributionURL>
+license "CC BY-SA 3.0 Unported" <http://creativecommons.org/licenses/by-sa/3.0/> <> <http://www.w3.org/1999/xhtml/vocab#license>
+<http://subsrc/> title "subsrc title" <http://subsrc/> <http://purl.org/dc/elements/1.1/title> <>
+<http://subsrc/> attrib "subsrc attribution" <http://subsrc/attrib/> <http://creativecommons.org/ns#attributionName> <http://creativecommons.org/ns#attributionURL>
+<http://subsrc/> license "CC BY-NC-ND 3.0 Unported" <http://creativecommons.org/licenses/by-nc-nd/3.0/> <> <http://www.w3.org/1999/xhtml/vocab#license>

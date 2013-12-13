@@ -29,27 +29,28 @@ class TestCreditFormatter(libcredit.CreditFormatter):
             self.source_stack.pop()
         self.source_depth -= 1
 
-    def add_title(self, text, url, property=None):
+    def add_title(self, token):
         if (self.source_depth > 1):
-            self.source_stack.append(url)
-        self.add_line('title', text, url, property)
+            self.source_stack.append(token.url)
+        self.add_line('title', token)
 
-    def add_attrib(self, text, url, property=None):
-        self.add_line('attrib', text, url, property)
+    def add_attrib(self, token):
+        self.add_line('attrib', token)
 
-    def add_license(self, text, url, property=None):
-        self.add_line('license', text, url, property)
+    def add_license(self, token):
+        self.add_line('license', token)
 
-    def add_line(self, type, text, url, property):
+    def add_line(self, type, token):
         prefix = ''
 
         if len(self.source_stack) > 0:
             prefix = '<' + '> <'.join(self.source_stack) + '> '
 
         self.output.append(prefix + type + ' "' + \
-            (text if text else '') + '" <' + \
-            (url if url else '') + '> <' + \
-            (property if property else '') + '>')
+            (token.text if token.text else '') + '" <' + \
+            (token.url if token.url else '') + '> <' + \
+            (token.text_property if token.text_property else '') + '> <' + \
+            (token.url_property if token.url_property else '') + '>')
 
 def load_credit(filename, source_uri):
     g = rdflib.Graph()
@@ -193,3 +194,18 @@ class LibCreditTests(unittest.TestCase):
         expected1 = u'main title by creator1, creator2.'
         expected2 = u'main title by creator2, creator1.'
         self.assertTrue(tf.get_text() == expected1 or tf.get_text() == expected2)
+
+    def test_html_basic(self):
+        credit = load_credit('dc-title-text', 'urn:src')
+        cf = libcredit.HTMLCreditFormatter()
+        credit.format(cf)
+        expected = '<div><p><span>a title</span>.</p></div>'
+        self.assertEqual(cf.root.toxml(), expected)
+
+    def test_html_rdfa(self):
+        credit = load_credit('source-with-full-attrib', 'http://src/')
+        expected = unicode(open('../testcases/source-with-full-attrib.out.html').read())
+        cf = libcredit.HTMLCreditFormatter()
+        credit.format(cf, subject_uri="#xyz")
+        self.assertEqual(cf.root.toxml(), expected)
+

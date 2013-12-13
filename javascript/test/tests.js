@@ -34,7 +34,7 @@
         var sourceStack = [];
         var sourceDepth = 0;
 
-        var add_line = function(type, text, url, property) {
+        var add_line = function(type, token) {
             var prefix = '';
 
             if (sourceStack.length) {
@@ -42,9 +42,10 @@
             }
 
             that.output.push(prefix + type + ' "' +
-                             (text ? text : '') + '" <' +
-                             (url ? url : '') + '> <' +
-                             (property ? property : '') + '>');
+                (token.text ? token.text : '') + '" <' +
+                (token.url ? token.url : '') + '> <' +
+                (token.textProperty ? token.textProperty : '') + '> <' +
+                (token.urlProperty ? token.urlProperty : '') + '>');
         };
 
 
@@ -65,20 +66,20 @@
             sourceDepth--;
         };
 
-        that.addTitle = function(text, url, property) {
+        that.addTitle = function(token) {
             if (sourceDepth > 1) {
-                sourceStack.push(url);
+                sourceStack.push(token.url);
             }
 
-            add_line('title', text, url, property);
+            add_line('title', token);
         };
 
-        that.addAttrib = function(text, url, property) {
-            add_line('attrib', text, url, property);
+        that.addAttrib = function(token) {
+            add_line('attrib', token);
         };
 
-        that.addLicense = function(text, url, property) {
-            add_line('license', text, url, property);
+        that.addLicense = function(token) {
+            add_line('license', token);
         };
 
         return that;
@@ -300,13 +301,7 @@
     });
 
     describe('RDF containers', function() {
-        testCredit('rdf-containers', 'http://src/', function (credit) {
-            var tf = libcredit.textCreditFormatter();
-            credit.format(tf);
-
-            var text = tf.getText();
-            expect( text === ('main title by creator1, creator2.') ).to.be.ok();
-        });
+        testCreditOutput('rdf-containers', 'http://src/');
     });
 
     describe('Multiple creators', function() {
@@ -339,6 +334,34 @@
 
             expect( credit.getTitleText() ).to.be( 'a title' );
             expect( credit.getTitleURL() ).to.be( 'http://test/' );
+        });
+    });
+
+    describe('Basic HTML output', function() {
+        testCredit('dc-title-text', 'urn:src', function (credit) {
+            var doc = new xmldom.DOMParser().parseFromString('');
+            var cf = libcredit.htmlCreditFormatter(doc);
+            credit.format(cf);
+
+            var serializer = new xmldom.XMLSerializer();
+            var html = serializer.serializeToString(cf.getRoot());
+            var expected = "<div><p><span>a title</span>.</p></div>";
+            expect(html === expected);
+            expect(true);
+        });
+    });
+
+    describe('HTML output with RDFa', function() {
+        testCredit('source-with-full-attrib', 'http://src/', function (credit) {
+            var doc = new xmldom.DOMParser().parseFromString('');
+            var cf = libcredit.htmlCreditFormatter(doc);
+            credit.format(cf, 10, null, "#xyz");
+
+            var serializer = new xmldom.XMLSerializer();
+            var html = serializer.serializeToString(cf.getRoot());
+            var expected = fs.readFileSync('../testcases/source-with-full-attrib.out.html', 'utf-8');
+            expect(html === expected);
+            expect(true);
         });
     });
 
