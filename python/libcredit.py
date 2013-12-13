@@ -574,7 +574,7 @@ class HTMLCreditFormatter(CreditFormatter):
             if self.subject_stack[0] and self.subject_stack[-1]:
                 if token.url_property:
                     a.attributes['rel'] = token.url_property
-                elif token.text_property:
+                if token.text_property:
                     a.attributes['property'] = token.text_property
             a.appendChild(self.doc.createTextNode(token.text))
             self.node_stack[-1].appendChild(a)

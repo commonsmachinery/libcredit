@@ -785,7 +785,8 @@
                 if (subjectStack[0] && currentSubject) {
                     if (token.urlProperty) {
                         current.setAttribute('rel', token.urlProperty);
-                    } else if (token.textProperty) {
+                    }
+                    if (token.textProperty) {
                         current.setAttribute('property', token.textProperty);
                     }
                 }
