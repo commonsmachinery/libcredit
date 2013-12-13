@@ -8,13 +8,13 @@
 
     // Test credit by calling func to perform the checks on the credit
     // object
-    
+
     var testCredit = function(filename, sourceURI, func) {
         it('credit for ' + filename, function() {
             var turtle, out, kb, credit, formatter;
 
             turtle = fs.readFileSync('../testcases/' + filename + '.ttl', 'utf-8');
-            
+
             kb = new $rdf.IndexedFormula();
 
             // A bug in rdflib means that we must pass in a base URI,
@@ -34,16 +34,18 @@
         var sourceStack = [];
         var sourceDepth = 0;
 
-        var add_line = function(type, text, url) {
+        var add_line = function(type, token) {
             var prefix = '';
-            
+
             if (sourceStack.length) {
                 prefix = '<' + sourceStack.join('> <') + '> ';
             }
-            
+
             that.output.push(prefix + type + ' "' +
-                             (text ? text : '') + '" <' +
-                             (url ? url : '') + '>');
+                (token.text ? token.text : '') + '" <' +
+                (token.url ? token.url : '') + '> <' +
+                (token.textProperty ? token.textProperty : '') + '> <' +
+                (token.urlProperty ? token.urlProperty : '') + '>');
         };
 
 
@@ -55,29 +57,29 @@
 
             sourceDepth++;
         };
-        
+
         that.end = function() {
             if (sourceDepth > 1) {
                 sourceStack.pop();
             }
-            
+
             sourceDepth--;
         };
 
-        that.addTitle = function(text, url) {
+        that.addTitle = function(token) {
             if (sourceDepth > 1) {
-                sourceStack.push(url);
+                sourceStack.push(token.url);
             }
-            
-            add_line('title', text, url);
+
+            add_line('title', token);
         };
 
-        that.addAttrib = function(text, url) {
-            add_line('attrib', text, url);
+        that.addAttrib = function(token) {
+            add_line('attrib', token);
         };
 
-        that.addLicense = function(text, url) {
-            add_line('license', text, url);
+        that.addLicense = function(token) {
+            add_line('license', token);
         };
 
         return that;
@@ -92,7 +94,7 @@
         testCredit(filename, sourceURI, function(credit) {
             var a, e;
             var actual;
-            
+
             expect( credit ).to.not.be( null );
 
             credit.format(f, 10); // we want some more sources
@@ -138,7 +140,7 @@
         it("should exist", function () {
             expect( libcredit ).to.be.ok();
         });
-        
+
         it("should have public functions", function () {
             expect( libcredit.credit ).to.be.a('function');
             expect( libcredit.creditFormatter ).to.be.a('function');
@@ -153,18 +155,18 @@
             'http://creativecommons.org/licenses/by-sa/3.0/') ).to.be(
                 'CC BY-SA 3.0 Unported'
             );
-                
+
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by-nc/2.5/deed.en') ).to.be(
                 'CC BY-NC 2.5 Unported'
             );
-                
+
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/licenses/by/3.0/au/deed.en_US') ).to.be(
                 'CC BY 3.0 (AU)'
             );
 
-        // Public domain 
+        // Public domain
         expect( libcredit.getLicenseName(
             'http://creativecommons.org/publicdomain/zero/1.0/deed.fr') ).to.be(
                 'CC0 1.0'
@@ -180,7 +182,7 @@
             'http://artlibre.org/licence/lal') ).to.be(
                 'Free Art License 1.3'
             );
-        
+
         expect( libcredit.getLicenseName(
             'http://artlibre.org/licence/lal/en') ).to.be(
                 'Free Art License 1.3'
@@ -197,8 +199,8 @@
             'http://some/rights/statement' ) ).to.be(
                 'http://some/rights/statement'
             );
-    });         
-        
+    });
+
     describe('Pure Dublin Core', function () {
         // By using urn:src we avoid getting a title from the source
         // URI
@@ -290,14 +292,28 @@
             var text = tf.getText();
 
             expect( text === ('main title. Källor:\n' +
-                              '    * http://subsrc-1/.\n' + 
+                              '    * http://subsrc-1/.\n' +
                               '    * http://subsrc-2/.') ||
                     text === ('main title. Källor:\n' +
-                              '    * http://subsrc-2/.\n' + 
+                              '    * http://subsrc-2/.\n' +
                               '    * http://subsrc-1/.') ).to.be.ok();
         });
     });
 
+    describe('RDF containers', function() {
+        testCreditOutput('rdf-containers', 'http://src/');
+    });
+
+    describe('Multiple creators', function() {
+        testCredit('multiple-creators', 'http://src/', function (credit) {
+            var tf = libcredit.textCreditFormatter();
+            credit.format(tf);
+
+            var text = tf.getText();
+            expect( text === ('main title by creator1, creator2.') ||
+                    text === ('main title by creator2, creator1.') ).to.be.ok();
+        });
+    });
 
     describe('Parse RDF/XML', function() {
         it('should parse provided string', function() {
@@ -313,11 +329,39 @@
                 '</rdf:RDF>';
 
             var doc = new xmldom.DOMParser().parseFromString(xml, 'text/xml');
-            
+
             var credit = libcredit.credit(libcredit.parseRDFXML(doc));
 
             expect( credit.getTitleText() ).to.be( 'a title' );
             expect( credit.getTitleURL() ).to.be( 'http://test/' );
+        });
+    });
+
+    describe('Basic HTML output', function() {
+        testCredit('dc-title-text', 'urn:src', function (credit) {
+            var doc = new xmldom.DOMParser().parseFromString('');
+            var cf = libcredit.htmlCreditFormatter(doc);
+            credit.format(cf);
+
+            var serializer = new xmldom.XMLSerializer();
+            var html = serializer.serializeToString(cf.getRoot());
+            var expected = "<div><p><span>a title</span>.</p></div>";
+            expect(html === expected);
+            expect(true);
+        });
+    });
+
+    describe('HTML output with RDFa', function() {
+        testCredit('source-with-full-attrib', 'http://src/', function (credit) {
+            var doc = new xmldom.DOMParser().parseFromString('');
+            var cf = libcredit.htmlCreditFormatter(doc);
+            credit.format(cf, 10, null, "#xyz");
+
+            var serializer = new xmldom.XMLSerializer();
+            var html = serializer.serializeToString(cf.getRoot());
+            var expected = fs.readFileSync('../testcases/source-with-full-attrib.out.html', 'utf-8');
+            expect(html === expected);
+            expect(true);
         });
     });
 

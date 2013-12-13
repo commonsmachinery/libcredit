@@ -18,18 +18,20 @@
     var CC;
     var XHTML;
     var OG;
+    var RDF;
 
     // Keep our own reference to rdflib's $rdf in a env-independent way
     var rdflib;
 
     var rdflibSetup = function(r) {
         rdflib = r;
-        
+
         DC = rdflib.Namespace('http://purl.org/dc/elements/1.1/');
         DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/');
         CC = rdflib.Namespace('http://creativecommons.org/ns#');
         XHTML = rdflib.Namespace('http://www.w3.org/1999/xhtml/vocab#');
         OG = rdflib.Namespace('http://ogp.me/ns#');
+        RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#');
     };
 
     var getCreditLine = function(hasTitle, hasAttrib, hasLicense)
@@ -37,7 +39,7 @@
         if (hasTitle) {
             if (hasAttrib) {
                 return (hasLicense ?
-                        '<title> by <attrib> (<license>).' : 
+                        '<title> by <attrib> (<license>).' :
                         '<title> by <attrib>.');
             }
             else {
@@ -67,43 +69,69 @@
 
     const freeArtLicenseURL = /^https?:\/\/artlibre.org\/licence\/lal(?:\/([-a-z0-9]+))?$/;
 
+    var getProperty = function(kb, subject, predicates, returnSeq) {
+        returnSeq = returnSeq || false;
+        var result = [];
 
-    var getTextProperty = function(kb, subject, predicate) {
-        var objs, i;
-
-        objs = kb.each(subject, predicate, null);
-        
-        for (i = 0; i < objs.length; i++) {
-            if (objs[i].termType === 'literal') {
-                // TODO: check xml:lang
-                return objs[i].value;
-            }
-            else if (objs[i].termType === 'symbol') {
-                return objs[i].uri;
-            }
-            // TODO: parse rdf:Alt 
+        if (!Array.isArray(predicates)) {
+            predicates = [predicates];
         }
 
-        return null;
+        for (var p = 0; p < predicates.length; p++) {
+            // stop collecting values if we don't need to return a list
+            if (!returnSeq && result.length > 0)
+                return result[0];
+
+            var predicate = predicates[p];
+            var objs = kb.each(subject, predicate, null);
+
+            for (var i = 0; i < objs.length; i++) {
+                if (objs[i].termType === 'literal') {
+                    // TODO: check xml:lang
+                    result.push(objs[i].value);
+                } else if (objs[i].termType === 'symbol') {
+                    result.push(objs[i].uri);
+                } else if (objs[i].termType === 'bnode') {
+                    result = result.concat(parseContainer(kb, objs[i]));
+                }
+            }
+        }
+
+        if (returnSeq)
+            return result.length > 0 ? result : null;
+        else
+            return result[0];
     };
 
-    var getURLProperty = function(kb, subject, predicate) {
-        var obj = kb.any(subject, predicate, null);
+    var parseContainer = function(kb, subject) {
+        result = [];
+        if ( kb.holds(subject, RDF('type'), RDF('Seq')) ||
+             kb.holds(subject, RDF('type'), RDF('Bag')) ||
+             kb.holds(subject, RDF('type'), RDF('Alt')) ) {
+            predicates = kb.each(subject);
+            contents = {};
+            for (var p = 0; p < predicates.length; p++) {
+                if ( predicates[p].value.indexOf("http://www.w3.org/1999/02/22-rdf-syntax-ns#_") == 0) {
+                    contents[predicates[p].value] = kb.any(subject, predicates[p]).value;
+                }
+            }
 
-        if (!obj) return null;
-        
-        if (obj.termType === 'symbol') {
-            // Assume they know what they're doing and use the URL
-            // as-is
-            return obj.uri;
-        }
-        else if (obj.termType === 'literal') {
-            // Use this if it seems to be an URL
-            return getURL(obj.value);
-        }
+            keys = [];
+            for (var key in contents)
+                keys.push(key);
+            keys.sort();
 
-        return null;
-    };
+            if (kb.holds(subject, RDF('type'), RDF('Alt'))) {
+                result.push(contents[keys[0]]);
+            } else {
+                result = [];
+                for (var k = 0; k < keys.length; k++) {
+                    result.push(contents[keys[k]]);
+                }
+            }
+        }
+        return result;
+    }
 
     const urlRE = /^https?:/;
 
@@ -134,7 +162,7 @@
         if (!baseURI) {
             baseURI = '';
         }
-        
+
         parser.parse(doc, baseURI, kb.sym(baseURI));
         return kb;
     };
@@ -151,7 +179,7 @@
      **/
     var getLicenseName = function(url) {
         var m, text;
-        
+
         m = url.match(ccLicenseURL);
         if (m) {
             text = 'CC ';
@@ -188,7 +216,7 @@
     /* credit(kb, [subjectURI])
      *
      * Return a new object that contain the credit information
-     * extracted from the RDF metadata, or null if there are no 
+     * extracted from the RDF metadata, or null if there are no
      * information.
      *
      * Parameters:
@@ -202,20 +230,19 @@
      */
 
     var credit = function(kb, subjectURI) {
-        var titleText = null;
-        var titleURL = null;
-        var attribText = null;
-        var attribURL = null;
-        var licenseText = null;
-        var licenseURL = null;
+        var title = {text: null, url: null, textProperty: null, urlProperty: null};
+        var attrib = {text: null, url: null, textProperty: null, urlProperty: null};
+        var license = {text: null, url: null, textProperty: null, urlProperty: null};
+
         var sources = [];
+        var subject;
 
         // Make scope a little cleaner by putting the parsing into
         // it's own functions
 
         var addSources = function(subject, predicate) {
             var srcObjs, i, src, url;
-            
+
             srcObjs = kb.each(subject, predicate);
 
             for (i = 0; i < srcObjs.length; i++) {
@@ -243,7 +270,7 @@
         };
 
         var parse = function() {
-            var mainSource, subject;
+            var mainSource;
 
             if (subjectURI === null || subjectURI === undefined) {
                 // Locate using <> <dc:source> ?, which is how the
@@ -271,83 +298,116 @@
             //
             // Title
             //
-            
-            titleText = getTextProperty(kb, subject, DC('title'));
 
-            if (!titleText) {
-                // Try Open Graph
-                titleText = getTextProperty(kb, subject, OG('title'));
-            }
+            title.text = getProperty(kb, subject, [
+                DC('title'),
+                DCTERMS('title'),
+                OG('title')
+            ]);
+            if (title.text)
+                title.textProperty = DC('title');
 
             // An Open Graph URL is probably a very good URL to use
-            titleURL = getURLProperty(kb, subject, OG('url'));
+            title.url = getURL(getProperty(kb, subject, OG('url')));
 
-            if (!titleURL) {
+            if (!title.url) {
                 // If nothing else, try to use the subject URI
-                titleURL = getURL(subject.uri);
+                title.url = getURL(subject.uri);
             }
 
-            if (!titleText) {
+            if (!title.text) {
                 // Fall back on URL
-                titleText = titleURL;
+                title.text = title.url;
             }
 
             //
             // Attribution
             //
 
-            attribText = getTextProperty(kb, subject, CC('attributionName'));
-            attribURL = getURLProperty(kb, subject, CC('attributionURL'));
+            attrib.text = getProperty(kb, subject, CC('attributionName'));
+            if (attrib.text)
+                attrib.textProperty = CC('attributionName');
+            attrib.url = getURL(getProperty(kb, subject, CC('attributionURL')));
+            if (attrib.url)
+                attrib.urlProperty = CC('attributionURL');
 
-            if (!attribText) {
+            if (!attrib.text) {
                 // Try a creator attribute instead
-                attribText = (getTextProperty(kb, subject, DC('creator')) ||
-                              getTextProperty(kb, subject, DCTERMS('creator')) ||
-                              getTextProperty(kb, subject, kb.sym('twitter:creator')));
+                attrib.text = getProperty(kb, subject, [
+                    DC('creator'),
+                    DCTERMS('creator')
+                ], true);
+                if (attrib.text && attrib.text.length == 1) {
+                    attrib.text = attrib.text[0];
+                }
+            }
+
+            if (!attrib.text) {
+                attrib.text = getProperty(kb, subject, kb.sym('twitter:creator'));
             }
 
             // Special case for flickr
-            if (!attribText && /^https?:\/\/www.flickr.com/.test(subject.uri)) {
-                attribText = getTextProperty(kb, subject, kb.sym('flickr_photos:by'));
+            if (!attrib.text && /^https?:\/\/www.flickr.com/.test(subject.uri)) {
+                attrib.text = getProperty(kb, subject, kb.sym('flickr_photos:by'));
             }
 
-            if (attribText && !attribURL) {
+            if (attrib.text && !attrib.textProperty)
+                attrib.textProperty = DC('creator');
+
+            if (attrib.text && !attrib.url) {
                 // Text creator might be a URL
-                attribURL = getURL(attribText);
+                attrib.url = getURL(attrib.text);
             }
-            
-            if (!attribText) {
+
+            if (!attrib.text) {
                 // Fall back on URL
-                attribText = attribURL;
+                attrib.text = attrib.url;
             }
-            
+
             //
             // License
             //
 
-            licenseURL = (getURLProperty(kb, subject, XHTML('license')) ||
-                          getURLProperty(kb, subject, DCTERMS('license')) ||
-                          getURLProperty(kb, subject, CC('license')));
+            // does xmpRights:UsageTerms belong here as well?
+            license.url = getURL(getProperty(kb, subject, [
+                XHTML('license'),
+                DCTERMS('license'),
+                CC('license')
+            ]));
 
-            if (licenseURL) {
-                licenseText = getLicenseName(licenseURL);
+            if (license.url) {
+                license.text = getLicenseName(license.url);
+                license.urlProperty = XHTML('license');
             }
 
-            if (!licenseText) {
+            if (!license.text) {
                 // Try to get a license text at least, even if the property isn't a URL
-                licenseText = (getTextProperty(kb, subject, DC('rights')) ||
-                               getTextProperty(kb, subject, XHTML('license')));
-            }
+                license.text = getProperty(kb, subject, DC('rights'));
+                if (license.text)
+                    license.textProperty = DC('rights');
 
+                if (!license.text) {
+                    license.text = getProperty(kb, subject, XHTML('license'));
+                    if (license.text)
+                        license.textProperty = XHTML('license');
+                }
+            }
             //
             // Sources
             //
-            
+
             addSources(subject, DC('source'));
             addSources(subject, DCTERMS('source'));
-            
+
+            if (title.urlProperty) title.urlProperty = title.urlProperty.uri;
+            if (title.textProperty) title.textProperty = title.textProperty.uri;
+            if (attrib.urlProperty) attrib.urlProperty = attrib.urlProperty.uri;
+            if (attrib.textProperty) attrib.textProperty = attrib.textProperty.uri;
+            if (license.urlProperty) license.urlProperty = license.urlProperty.uri;
+            if (license.textProperty) license.textProperty = license.textProperty.uri;
+
             // Did we manage to get anything that can make it into a credit?
-            return (titleText || attribText || licenseText || sources.length > 0);
+            return (title.text || attrib.text || license.text || sources.length > 0);
         };
 
         if (!parse()) {
@@ -358,48 +418,71 @@
 
         /* credit.getTitleText():
          * credit.getTitleURL():
+         * credit.getTitleTextProperty():
+         * credit.getTitleURLProperty():
          * credit.getAttribText():
          * credit.getAttribURL():
+         * credit.getAttribTextProperty():
+         * credit.getAttribURLProperty():
          * credit.getLicenseText():
          * credit.getLicenseURL():
+         * credit.getLicenseTextProperty():
+         * credit.getLicenseURLProperty():
+         * credit.getSubjectURI():
          *
          * Property getters returning a string or null.
          */
-        
+
         /* credit.getSources():
          *
          * Property getter returning an array of credit objects:
          */
 
-        that.getTitleText = function() { return titleText; };
-        that.getTitleURL = function() { return titleURL; };
-        that.getAttribText = function() { return attribText; };
-        that.getAttribURL = function() { return attribURL; };
-        that.getLicenseText = function() { return licenseText; };
-        that.getLicenseURL = function() { return licenseURL; };
+        that.getTitleText = function() { return title.text; };
+        that.getTitleURL = function() { return title.url; };
+        that.getTitleTextProperty = function() { return title.textProperty; };
+        that.getTitleURLProperty = function() { return title.urlProperty; };
+
+        that.getAttribText = function() { return attrib.text; };
+        that.getAttribURL = function() { return attrib.url; };
+        that.getAttribTextProperty = function() { return attrib.textProperty; };
+        that.getAttribURLProperty = function() { return attrib.urlProperty; };
+
+        that.getLicenseText = function() { return license.text; };
+        that.getLicenseURL = function() { return license.url; };
+        that.getLicenseTextProperty = function() { return license.textProperty; };
+        that.getLicenseURLProperty = function() { return license.urlProperty; };
+
         that.getSources = function() { return sources.slice(0); };
 
+        that.getSubjectURI = function() { return subject.uri };
 
-    /* credit.format(formatter, [sourceDepth, [i18n]])
-     *
-     * Use a formatter to generate a credit based on the metadata in
-     * the credit object.
-     *
-     * Parameters:
-     *
-     * - formatter: a formatter object, typically derived from
-     *   creditFormatter().
-     *
-     * - sourceDepth: number of levels of sources to get. If omitted
-     *   will default to 1, if falsy will not include any sources.
-     *
-     * - i18n: if provided, this must be a Jed instance for the domain
-     *   "libcredit".  It will be used to translate the credit
-     *   message. The caller is responsible for loading the correct
-     *   language into it.
-     */
 
-        that.format = function(formatter, sourceDepth, i18n) {
+        /* credit.format(formatter, [sourceDepth, [i18n]])
+         *
+         * Use a formatter to generate a credit based on the metadata in
+         * the credit object.
+         *
+         * Parameters:
+         *
+         * - formatter: a formatter object, typically derived from
+         *   creditFormatter().
+         *
+         * - sourceDepth: number of levels of sources to get. If omitted
+         *   will default to 1, if falsy will not include any sources.
+         *
+         * - i18n: if provided, this must be a Jed instance for the domain
+         *   "libcredit".  It will be used to translate the credit
+         *   message. The caller is responsible for loading the correct
+         *   language into it.
+         *
+         * - subjectURI: if provided, certain formatters, such as
+         *   HTMLCreditFormatter will provide semantic markup describing
+         *   the given URI; use getSubjectURI() to retreive the original
+         *   subject URI of the credit object.
+         */
+
+        that.format = function(formatter, sourceDepth, i18n, subjectURI) {
             var re = /<[a-z]+>/g;
             var creditLine;
             var textStart, textEnd;
@@ -407,11 +490,11 @@
             var item;
             var i;
             var srcLabel;
-            
+
             if (sourceDepth === undefined)
                 sourceDepth = 1;
-            
-            creditLine = getCreditLine(!!titleText, !!attribText, !!licenseText);
+
+            creditLine = getCreditLine(!!title.text, !!attrib.text, !!license.text);
 
             if (i18n) {
                 creditLine = (i18n
@@ -420,7 +503,7 @@
                               .fetch());
             }
 
-            formatter.begin();
+            formatter.begin(subjectURI);
 
             // Split credit line into text and credit items
             textStart = 0;
@@ -433,18 +516,27 @@
                     formatter.addText(creditLine.slice(textStart, textEnd));
                 }
                 textStart = re.lastIndex;
-                
+
                 switch (item) {
-                case '<title>': 
-                    formatter.addTitle(titleText, titleURL);
+                case '<title>':
+                    formatter.addTitle(title);
                     break;
 
                 case '<attrib>':
-                    formatter.addAttrib(attribText, attribURL);
+                    if (Array.isArray(attrib.text)) {
+                        for (var a = 0; a < attrib.text.length; a++) {
+                            var token = {text: attrib.text[a], url: null, textProperty: null, urlProperty: null};
+                            formatter.addAttrib(token);
+                            if (a + 1 < attrib.text.length)
+                                formatter.addText(", ");
+                        }
+                    } else {
+                        formatter.addAttrib(attrib);
+                    }
                     break;
 
-                case '<license>': 
-                    formatter.addLicense(licenseText, licenseURL);
+                case '<license>':
+                    formatter.addLicense(license);
                     break;
 
                 default:
@@ -456,7 +548,7 @@
             if (textStart < creditLine.length) {
                 formatter.addText(creditLine.slice(textStart));
             }
-            
+
 
             //
             // Add sources
@@ -478,7 +570,7 @@
 
                 for (i = 0; i < sources.length; i++) {
                     formatter.beginSource();
-                    sources[i].format(formatter, sourceDepth - 1, i18n);
+                    sources[i].format(formatter, sourceDepth - 1, i18n, sources[i].getSubjectURI());
                     formatter.endSource();
                 }
 
@@ -514,29 +606,31 @@
      *
      * endSource() - called when done printing credit for a source and after end.
      *
-     * addTitle(text, url) - format the title for source or work.
-     *     URL should point to the work's origin and can be null.
-     *
-     * addAttrib(text, url) - format the attribution for source or work.
-     *     URL should point to the work's author and can be null.
-     *
-     * addLicense(text, url) - format the work's license.
-     *     URL should point to the license and can be null.
+     * addTitle(token) - format the title for source or work.
+     * addAttrib(token) - format the attribution for source or work.
+     * addLicense(token) - format the work's license.
+     *     token is a convenience object used to pass title, attribution or license
+     *     information to the formatter.
+     *     It always contains the following members:
+     *     text - textual representation of title, attribution or license.
+     *     url - points to the work, author or license and can be null.
+     *     textProperty - URI of the text property (for semantics-aware formatters).
+     *     urlproperty - URI or the url property (for semantics-aware formatters).
      *
      * addText(text) - add any text (e.g. punctuation) in the current context.
      */
     var creditFormatter = function() {
         var that = {};
-        
+
         that.begin = function() {};
         that.end = function() {};
         that.beginSources = function(label) {};
         that.endSources = function() {};
         that.beginSource = function() {};
         that.endSource = function() {};
-        that.addTitle = function(text, url) {};
-        that.addAttrib = function(text, url) {};
-        that.addLicense = function(text, url) {};
+        that.addTitle = function(token) {};
+        that.addAttrib = function(token) {};
+        that.addLicense = function(token) {};
         that.addText = function(text) {};
 
         return that;
@@ -573,7 +667,7 @@
         that.beginSources = function(label) {
             if (creditText) creditText += ' ';
             creditText += label;
-            
+
             sourceDepth++;
         };
 
@@ -581,22 +675,22 @@
             sourceDepth--;
         };
 
-        that.addTitle = function(text, url) {
-            creditText += text;
+        that.addTitle = function(token) {
+            creditText += token.text;
         };
 
-        that.addAttrib = function(text, url) {
-            creditText += text;
+        that.addAttrib = function(token) {
+            creditText += token.text;
         };
 
-        that.addLicense = function(text, url) {
-            creditText += text;
+        that.addLicense = function(token) {
+            creditText += token.text;
         };
 
         that.addText = function(text) {
             creditText += text;
         };
-        
+
         that.getText = function() {
             return creditText;
         };
@@ -623,6 +717,8 @@
         var that = creditFormatter();
         var root, current;
         var nodeStack = [];
+        var subjectStack = [];
+        var currentSubject = null;
 
         root = current = document.createElement('div');
 
@@ -642,12 +738,20 @@
             current.appendChild(node);
         };
 
-        that.begin = function() {
-            startElement('p');  
+        that.begin = function(subjectURI) {
+            startElement('p');
+
+            currentSubject = subjectURI;
+            subjectStack.push(currentSubject);
+
+            if (subjectStack[0] && currentSubject) {
+                current.setAttribute('about', subjectURI);
+            }
         };
 
         that.end = function() {
             endElement();
+            currentSubject = subjectStack.pop();
         };
 
         that.beginSources = function(label) {
@@ -656,12 +760,16 @@
             }
 
             startElement('ul');
+            if (subjectStack[0] && currentSubject) {
+                current.setAttribute('about', currentSubject);
+                current.setAttribute('rel', DC('source').value);
+            }
         };
-        
+
         that.endSources = function() {
             endElement();
         };
-        
+
         that.beginSource = function() {
             startElement('li');
         };
@@ -670,15 +778,23 @@
             endElement();
         };
 
-        that.addTitle = that.addAttrib = that.addLicense = function(text, url) {
-            if (url) {
+        that.addTitle = that.addAttrib = that.addLicense = function(token) {
+            if (token.url) {
                 startElement('a');
-                current.setAttribute('href', url);
-                addText(text);
+                current.setAttribute('href', token.url);
+                if (subjectStack[0] && currentSubject) {
+                    if (token.urlProperty) {
+                        current.setAttribute('rel', token.urlProperty);
+                    }
+                    if (token.textProperty) {
+                        current.setAttribute('property', token.textProperty);
+                    }
+                }
+                addText(token.text);
                 endElement();
             }
             else {
-                addText(text);
+                addText(token.text);
             }
         };
 
@@ -693,7 +809,7 @@
     libcredit.htmlCreditFormatter = htmlCreditFormatter;
 
 
-    
+
     // Handle node, amd, and global systems
     if (typeof exports !== 'undefined') {
         if (typeof module !== 'undefined' && module.exports) {
@@ -717,5 +833,5 @@
         // Leak a global regardless of module system
         root['libcredit'] = libcredit;
     }
-    
+
 })(this);

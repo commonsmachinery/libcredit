@@ -1,0 +1,13 @@
+# sources-uris: sources only indicated with URIs
+#
+# Test both proper resources and URIs as literals.
+
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> dc:source <http://src/> .
+
+<http://src/>
+  dc:title "main title" ;
+  dc:creator "creator1" ;
+  dc:creator "creator2" .

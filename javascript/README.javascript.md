@@ -78,6 +78,10 @@ formatter and an HTML formatter. After creating a formatter object, call
       `libcredit`.  It will be used to translate the credit
       message. The caller is responsible for loading the correct
       language into it.
+    - subjectURI: if provided, certain formatters, such as
+      HTMLCreditFormatter will provide semantic markup describing
+      the given URI; use getSubjectURI() to retreive the original
+      subject URI of the credit object.
 
 ### Writing your own formatters
 
@@ -89,9 +93,9 @@ object. Override the formatter methods as follows:
 
         that.begin = function() { /* ... */ };
         that.end = function() { /* ... */ };
-        that.addTitle = function(text, url) { /* ... */ };
-        that.addAttrib = function(text, url) { /* ... */ };
-        that.addLicense = function(text, url) { /* ... */ };
+        that.addTitle = function(token) { /* ... */ };
+        that.addAttrib = function(token) { /* ... */ };
+        that.addLicense = function(token) { /* ... */ };
 
         return that;
     };
@@ -106,12 +110,16 @@ Here's the complete list of formatter methods that you can override:
 * `endSources()` - called when done printing the list of sources.
 * `beginSource()` - called before printing credit for a source and before `begin`.
 * `endSource()` - called when done printing credit for a source and after `end`.
-* `addTitle(text, url)` - format the title for source or work.
-  URL should point to the work's origin and can be null.
-* `addAttrib(text, url)` - format the attribution for source or work.
-  URL should point to the work's author and can be null.
-* `addLicense(text, url)` - format the work's license.
-  URL should point to the license and can be null.
+* `addTitle(token)` - format the title for source or work.
+* `addAttrib(token)` - format the attribution for source or work.
+* `addLicense(token)` - format the work's license.
+  token is a convenience object used to pass title, attribution or license
+  information to the formatter.
+  It always contains the following members:
+  text - textual representation of title, attribution or license.
+  url - points to the work, author or license and can be null.
+  textProperty - URI of the text property (for semantics-aware formatters).
+  urlproperty - URI or the url property (for semantics-aware formatters).
 * `addText(text)` - add any text (e.g. punctuation) in the current context.
 
 
