@@ -1,6 +1,6 @@
 {
     "name": "libcredit.js",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "homepage": "https://github.com/commonsmachinery/libcredit",
     "author": "Commons Machinery <dev@commonsmachinery.se>",
     "description": "Generate attribution and license messages from RDF metadata",
