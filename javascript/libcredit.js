@@ -56,7 +56,7 @@
             }
             else {
                 return (hasLicense ?
-                        'License: <license>.' :
+                        'Terms of use: <license>.' :
                         null);
             }
         }

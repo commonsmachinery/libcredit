@@ -86,7 +86,7 @@ CREDIT_MARKUP = {
     (True, False, False):   "<title>.",
     (False, True, True):    "Credit: <attrib> (<license>).",
     (False, True, False):   "Credit: <attrib>.",
-    (False, False, True):   "License: <license>.",
+    (False, False, True):   "Terms of use: <license>.",
     (False, False, False):  None,
 }
 

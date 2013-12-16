@@ -42,7 +42,7 @@ msgstr ""
 msgid "Credit: <attrib>."
 msgstr ""
 
-msgid "License: <license>."
+msgid "Terms of use: <license>."
 msgstr ""
 
 msgid "Source:"

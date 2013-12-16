@@ -1,8 +1,9 @@
-# 0.2 (2013-12-13)
+# 0.2 (2013-12-16)
 
 * Support RDF containers (rdf:Seq, rdf:Bag, rdf:Alt).
 * Support multiple creators per work.
 * Provide semantic markup in formatters which support property semantics.
+* Change "License" label to "Terms of use".
 
 # 0.1 (2013-11-18)
 
