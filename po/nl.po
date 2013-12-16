@@ -34,7 +34,6 @@ msgstr "Credit: <attrib> (<license>)."
 msgid "Credit: <attrib>."
 msgstr "Credit: <attrib>."
 
-#, fuzzy
 msgid "Terms of use: <license>."
 msgstr "Gebruiksvoorwaarden: <license>."
 
