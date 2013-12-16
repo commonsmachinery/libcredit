@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: libcredit\n"
 "Report-Msgid-Bugs-To: dev@commonsmachinery.se\n"
 "POT-Creation-Date: 2013-10-22 14:21+0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2013-12-16 23:25+0700\n"
 "Last-Translator: Maarten Zeinstra <mz@kl.nl>\n"
 "Language-Team: Dutch <LL@li.org>\n"
 "Language: Dutch\n"
@@ -36,7 +36,7 @@ msgstr "Credit: <attrib>."
 
 #, fuzzy
 msgid "Terms of use: <license>."
-msgstr "Licentie: <license>."
+msgstr "Gebruiksvoorwaarden: <license>."
 
 msgid "Source:"
 msgid_plural "Sources:"
