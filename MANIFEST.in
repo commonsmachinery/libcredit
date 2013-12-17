@@ -9,3 +9,4 @@ include python/test/*.py
 include testcases/README.md
 include testcases/*.ttl
 include testcases/*.out
+include testcases/*.out.html
