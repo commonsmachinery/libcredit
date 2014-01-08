@@ -209,3 +209,11 @@ class LibCreditTests(unittest.TestCase):
         credit.format(cf, subject_uri="#xyz")
         self.assertEqual(cf.root.toxml(), expected)
 
+    def test_html_elements_and_classes(self):
+        credit = load_credit('source-with-full-attrib', 'http://src/')
+        expected = unicode(open('../testcases/source-with-full-attrib-custom.out.html').read())
+        cf = libcredit.HTMLCreditFormatter(
+            element_overrides={'source_list': 'ol'},
+            classes={'root': 'credit', 'license': 'redprint'})
+        credit.format(cf, subject_uri="#xyz")
+        self.assertEqual(cf.root.toxml(), expected)

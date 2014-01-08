@@ -346,8 +346,7 @@
             var serializer = new xmldom.XMLSerializer();
             var html = serializer.serializeToString(cf.getRoot());
             var expected = "<div><p><span>a title</span>.</p></div>";
-            expect(html === expected);
-            expect(true);
+            expect(html).to.be(expected);
         });
     });
 
@@ -357,11 +356,52 @@
             var cf = libcredit.htmlCreditFormatter(doc);
             credit.format(cf, 10, null, "#xyz");
 
-            var serializer = new xmldom.XMLSerializer();
-            var html = serializer.serializeToString(cf.getRoot());
-            var expected = fs.readFileSync('../testcases/source-with-full-attrib.out.html', 'utf-8');
-            expect(html === expected);
-            expect(true);
+            var root = cf.getRoot();
+
+            // manually check the element properties here, because
+            // the serializer output doesn't always match pregenerated HTML
+            var element = root.getElementsByTagName("p")[0];
+
+            expect( element.getAttribute("about") ).to.be("#xyz");
+
+            expect( element.childNodes[2].getAttribute("href") ).to.be(
+                "http://attrib/" );
+
+            expect( element.childNodes[2].getAttribute("rel") ).to.be(
+                "http://creativecommons.org/ns#attributionURL" );
+
+            expect( element.childNodes[2].getAttribute("property") ).to.be(
+                "http://creativecommons.org/ns#attributionName" );
+
+            expect( element.childNodes[2].getAttribute("property") ).to.be(
+                "http://creativecommons.org/ns#attributionName" );
+
+            expect( element.childNodes[7].getAttribute("about") ).to.be("#xyz");
+
+            expect( element.childNodes[7].getAttribute("rel") ).to.be(
+                "http://purl.org/dc/elements/1.1/source" );
+        });
+    });
+
+    describe('HTML output with custom elements and classes', function() {
+        testCredit('source-with-full-attrib', 'http://src/', function (credit) {
+            var doc = new xmldom.DOMParser().parseFromString('');
+            var cf = libcredit.htmlCreditFormatter(doc,
+                {source_list: 'ol'},
+                {root: 'credit', license: 'redprint'});
+            credit.format(cf, 10, null, '#xyz');
+
+            var root = cf.getRoot();
+
+            // manually check the element properties here, because
+            // the serializer output doesn't always match pregenerated HTML
+            var element = root.getElementsByTagName("p")[0];
+
+            expect( root.getAttribute("class") ).to.be("credit");
+
+            expect( element.childNodes[4].getAttribute("class") ).to.be("redprint");
+
+            expect( element.childNodes[7].tagName ).to.be("ol");
         });
     });
 

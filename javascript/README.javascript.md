@@ -68,6 +68,18 @@ formatter and an HTML formatter. After creating a formatter object, call
     credit.format(formatter);
     console.log(formatter.getRoot());
 
+HTML formatter supports overriding elements and classes by passing override
+dictionaries to the constructor:
+
+    var formatter = libcredit.htmlCreditFormatter(targetDocument,
+        {'source_list': 'ol'}, # element overrides
+        {'root': 'credit', 'license': 'redprint'} # classes
+    );
+
+Overridable elements include `root`, `credit`, `source_list` and
+`source_item`. In addition to that you can provide classes for
+`title`, `attrib` and `license` elements.
+
 `credit.format` accepts the following arguments:
 
     - formatter: a formatter object implementing all the methods of

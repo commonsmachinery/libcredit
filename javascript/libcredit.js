@@ -713,20 +713,42 @@
      *
      * getRoot(): return the root element of the generated credit.
      */
-    var htmlCreditFormatter = function(document) {
+    var htmlCreditFormatter = function(document, elementOverrides, classes) {
         var that = creditFormatter();
         var root, current;
         var nodeStack = [];
         var subjectStack = [];
         var currentSubject = null;
 
-        root = current = document.createElement('div');
 
-        var startElement = function(type) {
-            var node = document.createElement(type);
+        elementOverrides = elementOverrides || {};
+        classes = classes || {};
+
+        var elements = {};
+        elements.root = elementOverrides.root || "div";
+        elements.credit = elementOverrides.credit || "p";
+        elements.source_list = elementOverrides.source_list || "ul";
+        elements.source_item = elementOverrides.source_item || "li";
+        elements.token_url = "a";
+        elements.token_text = "span";
+
+        root = current = document.createElement(elements.root);
+        if (classes.root) {
+            root.setAttribute('class', classes.root);
+        }
+
+        var startElement = function(type, class_key) {
+            var node = document.createElement(elements[type]);
+
+            class_key = class_key || type;
+            if (class_key && classes[class_key]) {
+                node.setAttribute('class', classes[class_key]);
+            }
+
             nodeStack.push(current);
             current.appendChild(node);
             current = node;
+            return node;
         };
 
         var endElement = function() {
@@ -739,7 +761,7 @@
         };
 
         that.begin = function(subjectURI) {
-            startElement('p');
+            startElement('credit');
 
             currentSubject = subjectURI;
             subjectStack.push(currentSubject);
@@ -759,7 +781,7 @@
                 addText(' ' + label);
             }
 
-            startElement('ul');
+            startElement('source_list');
             if (subjectStack[0] && currentSubject) {
                 current.setAttribute('about', currentSubject);
                 current.setAttribute('rel', DC('source').value);
@@ -771,16 +793,28 @@
         };
 
         that.beginSource = function() {
-            startElement('li');
+            startElement('source_item');
         };
 
         that.endSource = function() {
             endElement();
         };
 
-        that.addTitle = that.addAttrib = that.addLicense = function(token) {
+        that.addTitle = function(token) {
+            addImpl(token, 'title');
+        }
+
+        that.addAttrib = function(token) {
+            addImpl(token, 'attrib');
+        }
+
+        that.addLicense = function(token) {
+            addImpl(token, 'license');
+        }
+
+        var addImpl = function(token, class_key) {
             if (token.url) {
-                startElement('a');
+                startElement('token_url', class_key);
                 current.setAttribute('href', token.url);
                 if (subjectStack[0] && currentSubject) {
                     if (token.urlProperty) {
@@ -794,7 +828,12 @@
                 endElement();
             }
             else {
-                addText(token.text);
+                startElement('token_text', class_key);
+                addText(token.text)
+                if (subjectStack[0] && currentSubject && token.textProperty) {
+                        current.setAttribute('property', token.textProperty);
+                }
+                endElement();
             }
         };
 

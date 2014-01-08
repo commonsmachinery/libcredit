@@ -499,6 +499,7 @@ class TextCreditFormatter(CreditFormatter):
     def get_text(self):
         return self.text
 
+
 class HTMLCreditFormatter(CreditFormatter):
     """
     Credit formatter that outputs credit as HTML.
@@ -506,7 +507,7 @@ class HTMLCreditFormatter(CreditFormatter):
     Keyword arguments:
     document -- xml.minidom.Document instance used to create HTML elements.
     """
-    def __init__(self, document=None):
+    def __init__(self, document=None, element_overrides={}, classes={}):
         if document:
             self.doc = document
         else:
@@ -516,13 +517,30 @@ class HTMLCreditFormatter(CreditFormatter):
         self.subject_stack = []
         self.depth = 0
 
+        self.elements = {}
+        self.elements['root'] = element_overrides.get('root', 'div')
+        self.elements['credit'] = element_overrides.get('credit', 'p')
+        self.elements['source_list'] = element_overrides.get('source_list', 'ul')
+        self.elements['source_item'] = element_overrides.get('source_item', 'li')
+        self.elements['token_url'] = 'a'
+        self.elements['token_text'] = 'span'
+
+        self.classes = {}
+        self.classes['root'] = classes.get('root', None)
+        self.classes['credit'] = classes.get('credit', None)
+        self.classes['source_list'] = classes.get('source_list', None)
+        self.classes['source_item'] = classes.get('source_item', None)
+        self.classes['title'] = classes.get('title', None)
+        self.classes['attrib'] = classes.get('attrib', None)
+        self.classes['license'] = classes.get('license', None)
+
     def begin(self, subject_uri=None):
         if self.depth == 0:
-            self.root = self.doc.createElement('div')
+            self.root = self._create_element('root')
             self.node_stack.append(self.root)
             self.doc.appendChild(self.root)
 
-        node = self.doc.createElement('p')
+        node = self._create_element('credit')
         self.node_stack[-1].appendChild(node)
         self.node_stack.append(node)
 
@@ -538,7 +556,7 @@ class HTMLCreditFormatter(CreditFormatter):
     def begin_sources(self, label=None):
         if label:
             self.add_text(" " + label)
-        node = self.doc.createElement('ul')
+        node = self._create_element('source_list')
         if self.subject_stack[0] and self.subject_stack[-1]:
             node.attributes['about'] = self.subject_stack[-1]
             node.attributes['rel'] = unicode(DC['source'])
@@ -551,7 +569,7 @@ class HTMLCreditFormatter(CreditFormatter):
         self.node_stack.pop()
 
     def begin_source(self):
-        node = self.doc.createElement('li')
+        node = self._create_element('source_item')
         self.node_stack[-1].appendChild(node)
         self.node_stack.append(node)
 
@@ -559,31 +577,13 @@ class HTMLCreditFormatter(CreditFormatter):
         self.node_stack.pop()
 
     def add_title(self, token):
-        self.add_impl(token)
+        self._add_impl(token, class_key='title')
 
     def add_attrib(self, token):
-        self.add_impl(token)
+        self._add_impl(token, class_key='attrib')
 
     def add_license(self, token):
-        self.add_impl(token)
-
-    def add_impl(self, token):
-        if token.url:
-            a = self.doc.createElement('a')
-            a.attributes['href'] = token.url
-            if self.subject_stack[0] and self.subject_stack[-1]:
-                if token.url_property:
-                    a.attributes['rel'] = token.url_property
-                if token.text_property:
-                    a.attributes['property'] = token.text_property
-            a.appendChild(self.doc.createTextNode(token.text))
-            self.node_stack[-1].appendChild(a)
-        else:
-            span = self.doc.createElement('span')
-            if self.subject_stack[0] and self.subject_stack[-1] and token.text_property:
-                span.attributes['property'] = token.text_property
-            span.appendChild(self.doc.createTextNode(token.text))
-            self.node_stack[-1].appendChild(span)
+        self._add_impl(token, class_key='license')
 
     def add_text(self, text):
         self.node_stack[-1].appendChild(self.doc.createTextNode(text))
@@ -596,6 +596,32 @@ class HTMLCreditFormatter(CreditFormatter):
             return self.root.toxml()
         else:
             return u''
+
+    def _create_element(self, key, class_key=None):
+        if not class_key:
+            class_key = key
+        element = self.doc.createElement(self.elements[key])
+        if self.classes.has_key(class_key) and self.classes[class_key]:
+            element.attributes['class'] = self.classes[class_key]
+        return element
+
+    def _add_impl(self, token, class_key):
+        if token.url:
+            a = self._create_element('token_url', class_key)
+            a.attributes['href'] = token.url
+            if self.subject_stack[0] and self.subject_stack[-1]:
+                if token.url_property:
+                    a.attributes['rel'] = token.url_property
+                if token.text_property:
+                    a.attributes['property'] = token.text_property
+            a.appendChild(self.doc.createTextNode(token.text))
+            self.node_stack[-1].appendChild(a)
+        else:
+            span = self._create_element('token_text')
+            if self.subject_stack[0] and self.subject_stack[-1] and token.text_property:
+                span.attributes['property'] = token.text_property
+            span.appendChild(self.doc.createTextNode(token.text))
+            self.node_stack[-1].appendChild(span)
 
 
 if __name__ == '__main__':

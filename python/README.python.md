@@ -51,6 +51,18 @@ formatter and an HTML formatter. After creating a formatter object, call
     credit.format(html_formattter)
     html = html_formatter.get_root()
 
+HTML formatter supports overriding elements and classes by passing override
+dictionaries to the constructor:
+
+    formatter = HTMLCreditFormatter(
+        element_overrides={'source_list': 'ol'},
+        classes={'root': 'credit', 'license': 'redprint'}
+    )
+
+Overridable elements include `root`, `credit`, `source_list` and
+`source_item`. In addition to that you can provide classes for
+`title`, `attrib` and `license` elements.
+
 Additionally, `credit.format` accepts the following arguments:
 
     - formatter -- a CreditFormatter to use for output
