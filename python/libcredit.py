@@ -472,7 +472,12 @@ class TextCreditFormatter(CreditFormatter):
 
     def begin_sources(self, label=None):
         if label:
-            self.text += u" " + label.decode("utf-8")
+            # This check is an indication that we must think a bit
+            # more about our string handling...
+            if hasattr(label, 'decode'):
+                label = label.decode("utf-8")
+
+            self.text += u" " + label
         self.depth += 1
 
     def end_sources(self):
