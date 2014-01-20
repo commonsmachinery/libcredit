@@ -21,12 +21,24 @@ try:
 except ImportError:
     import urllib.parse as urlparse
 
-# another compatibility hack
+# We need to make sure that various strings from various places indeed
+# are in unicode in both Python 2 and 3.  Everything is cast, even the
+# things that seem to be unicode/str already since e.g. rdflib.URIRef
+# seems to inherit unicode/str.
 try:
     basestring = basestring
+    def ensure_unicode(s):
+        if isinstance(s, unicode): return unicode(s)
+        if isinstance(s, str): return s.decode('utf-8')
+        return unicode(s)
+
 except NameError:
     basestring = str
-    unicode = str
+    def ensure_unicode(s):
+        if isinstance(s, str): return str(s)
+        if isinstance(s, bytes): return s.decode('utf-8')
+        return str(s)
+
 
 def get_i18n(languages = None):
     if languages is None:
@@ -80,13 +92,13 @@ def get_license_label(url):
 # credit markup templates for metadata of various completeness
 # key format: (title != None, attrib != None, license != None)
 CREDIT_MARKUP = {
-    (True, True, True):     "<title> by <attrib> (<license>).",
-    (True, True, False):    "<title> by <attrib>.",
-    (True, False, True):    "<title> (<license>).",
-    (True, False, False):   "<title>.",
-    (False, True, True):    "Credit: <attrib> (<license>).",
-    (False, True, False):   "Credit: <attrib>.",
-    (False, False, True):   "Terms of use: <license>.",
+    (True, True, True):     u"<title> by <attrib> (<license>).",
+    (True, True, False):    u"<title> by <attrib>.",
+    (True, False, True):    u"<title> (<license>).",
+    (True, False, False):   u"<title>.",
+    (False, True, True):    u"Credit: <attrib> (<license>).",
+    (False, True, False):   u"Credit: <attrib>.",
+    (False, False, True):   u"Terms of use: <license>.",
     (False, False, False):  None,
 }
 
@@ -121,7 +133,7 @@ def get_url(url):
     url -- URL
     """
     url_re = "^https?:"
-    if re.match(url_re, unicode(url)):
+    if re.match(url_re, ensure_unicode(url)):
         return url
     else:
         return None
@@ -169,7 +181,7 @@ class Credit(object):
         self.title.url = get_url(self._get_property_any(subject, OG['url']))
 
         if self.title.url is None:
-            self.title.url = get_url(unicode(subject))
+            self.title.url = get_url(ensure_unicode(subject))
 
         self.title.text = self._get_property_any(subject, [
             DC['title'],
@@ -219,7 +231,7 @@ class Credit(object):
             # flickr_by = urlparse.urlparse(str(flickr_by))[2].split('/')[-2]
 
             if not self.attrib.text and flickr_by:
-                self.attrib.text = unicode(flickr_by)
+                self.attrib.text = ensure_unicode(flickr_by)
 
         #  make things a little simpler by putting dc:creator into the semantics
         if not self.attrib.text_property:
@@ -265,12 +277,12 @@ class Credit(object):
                     self.sources.append(Credit(rdf, subject=s))
 
 
-        self.title.url_property = unicode(self.title.url_property) if self.title.url_property else None
-        self.title.text_property = unicode(self.title.text_property) if self.title.text_property else None
-        self.attrib.url_property = unicode(self.attrib.url_property) if self.attrib.url_property else None
-        self.attrib.text_property = unicode(self.attrib.text_property) if self.attrib.text_property else None
-        self.license.url_property = unicode(self.license.url_property) if self.license.url_property else None
-        self.license.text_property = unicode(self.license.text_property) if self.license.text_property else None
+        self.title.url_property = ensure_unicode(self.title.url_property) if self.title.url_property else None
+        self.title.text_property = ensure_unicode(self.title.text_property) if self.title.text_property else None
+        self.attrib.url_property = ensure_unicode(self.attrib.url_property) if self.attrib.url_property else None
+        self.attrib.text_property = ensure_unicode(self.attrib.text_property) if self.attrib.text_property else None
+        self.license.url_property = ensure_unicode(self.license.url_property) if self.license.url_property else None
+        self.license.text_property = ensure_unicode(self.license.text_property) if self.license.text_property else None
 
         # TODO: raise an exception if no credit info is found?
 
@@ -295,30 +307,37 @@ class Credit(object):
             #return # TODO: raise an exception instead?
 
         if i18n:
-            markup = i18n.gettext(markup)
+            markup = i18n.lgettext(markup)
+            if markup:
+                markup = ensure_unicode(markup)
 
         formatter.begin(subject_uri=subject_uri)
 
         for item in ITEM_RE.split(markup):
-            if item == '<title>':
+            if item == u'<title>':
                 formatter.add_title(self.title)
-            elif item == '<attrib>':
+            elif item == u'<attrib>':
                 if isinstance(self.attrib.text, (list, tuple)):
                     for a, author in enumerate(self.attrib.text):
                         attrib = CreditToken(text=author)
                         formatter.add_attrib(attrib)
                         if a + 1 < len(self.attrib.text):
-                            formatter.add_text(", ")
+                            formatter.add_text(u", ")
                 else:
                     formatter.add_attrib(self.attrib)
-            elif item == '<license>':
+            elif item == u'<license>':
                 formatter.add_license(self.license)
             else:
                 formatter.add_text(item)
 
         if self.sources and source_depth != 0:
-            formatter.begin_sources(i18n.ngettext(
-                    'Source:', 'Sources:', len(self.sources)))
+            if i18n:
+                source_string = ensure_unicode(i18n.lngettext(
+                        'Source:', 'Sources:', len(self.sources)))
+            else:
+                source_string = 'Sources:' if len(self.sources) > 1 else 'Source:'
+
+            formatter.begin_sources(source_string)
 
             for s in self.sources:
                 formatter.begin_source()
@@ -330,7 +349,7 @@ class Credit(object):
         formatter.end()
 
     def get_subject_uri(self):
-        return unicode(self.subject)
+        return ensure_unicode(self.subject)
 
     def _get_property_any(self, subject, properties):
         subject = a2uri(subject)
@@ -347,7 +366,7 @@ class Credit(object):
                     if self._is_container(value):
                         return self._parse_container(value)
                     else:
-                        return unicode(value)
+                        return ensure_unicode(value)
             except StopIteration:
                 pass
 
@@ -365,7 +384,7 @@ class Credit(object):
                 if self._is_container(value):
                     result += self._parse_container(value)
                 else:
-                    result.append(unicode(value))
+                    result.append(ensure_unicode(value))
 
         return result
 
@@ -378,7 +397,7 @@ class Credit(object):
     def _parse_container(self, subject):
         result = []
         for item in rdflib.graph.Seq(self.g, subject):
-            result.append(unicode(item))
+            result.append(ensure_unicode(item))
         if (subject, RDF.type, RDF.Alt) in self.g:
             return result[0]
         else:
@@ -472,11 +491,6 @@ class TextCreditFormatter(CreditFormatter):
 
     def begin_sources(self, label=None):
         if label:
-            # This check is an indication that we must think a bit
-            # more about our string handling...
-            if hasattr(label, 'decode'):
-                label = label.decode("utf-8")
-
             self.text += u" " + label
         self.depth += 1
 
@@ -560,11 +574,11 @@ class HTMLCreditFormatter(CreditFormatter):
 
     def begin_sources(self, label=None):
         if label:
-            self.add_text(" " + label)
+            self.add_text(u" " + label)
         node = self._create_element('source_list')
         if self.subject_stack[0] and self.subject_stack[-1]:
             node.attributes['about'] = self.subject_stack[-1]
-            node.attributes['rel'] = unicode(DC['source'])
+            node.attributes['rel'] = ensure_unicode(DC['source'])
         self.node_stack[-1].appendChild(node)
         self.node_stack.append(node)
         self.depth += 1
@@ -606,7 +620,7 @@ class HTMLCreditFormatter(CreditFormatter):
         if not class_key:
             class_key = key
         element = self.doc.createElement(self.elements[key])
-        if self.classes.has_key(class_key) and self.classes[class_key]:
+        if self.classes.get(class_key):
             element.attributes['class'] = self.classes[class_key]
         return element
 

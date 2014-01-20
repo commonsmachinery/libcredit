@@ -13,6 +13,7 @@ import unittest
 import gettext
 import rdflib
 import libcredit
+from libcredit import ensure_unicode
 
 class TestCreditFormatter(libcredit.CreditFormatter):
     def __init__(self):
@@ -54,7 +55,8 @@ class TestCreditFormatter(libcredit.CreditFormatter):
 
 def load_credit(filename, source_uri):
     g = rdflib.Graph()
-    g.parse('../testcases/' + filename + '.ttl', format="n3")
+    with open('../testcases/' + filename + '.ttl') as f:
+        g.parse(f, format="n3")
     credit = libcredit.Credit(g, source_uri)
     return credit
 
@@ -66,8 +68,9 @@ def format_credit(credit):
     return actual
 
 def load_output(filename):
-    out = open('../testcases/' + filename + '.out').read().split('\n')
-    expected = [unicode(s) for s in out if s != '']
+    with open('../testcases/' + filename + '.out') as f:
+        out = f.read().split('\n')
+    expected = [ensure_unicode(s) for s in out if s != '']
     expected.sort()
     return expected
 
@@ -159,25 +162,25 @@ class LibCreditTests(unittest.TestCase):
             '    * subsrc title by subsrc attribution (CC BY-NC-ND 3.0 Unported).')
 
     def test_i18n(self):
-        i18n = gettext.GNUTranslations(open('../build/mo/sv/LC_MESSAGES/libcredit.mo'))
+        i18n = gettext.translation('libcredit', '../build/mo', languages = ['sv'])
         i18n.set_output_charset('utf-8')
 
         credit = load_credit('source-with-full-attrib', 'http://src/')
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
         self.assertEqual(tf.get_text(),
-            u'a title av name of attribution (CC BY-SA 3.0 Unported). Källa:\n' + \
-            '    * subsrc title av subsrc attribution (CC BY-NC-ND 3.0 Unported).')
+            u'a title av name of attribution (CC BY-SA 3.0 Unported). K\xe4lla:\n' + \
+            u'    * subsrc title av subsrc attribution (CC BY-NC-ND 3.0 Unported).')
 
         credit = load_credit('sources-uris', 'http://src/')
         tf = libcredit.TextCreditFormatter()
         credit.format(tf, 10, i18n)
-        expected1 = u'main title. Källor:\n' + \
-            '    * http://subsrc-1/.\n' + \
-            '    * http://subsrc-2/.'
-        expected2 = u'main title. Källor:\n' + \
-            '    * http://subsrc-2/.\n' + \
-            '    * http://subsrc-1/.'
+        expected1 = u'main title. K\xe4llor:\n' + \
+            u'    * http://subsrc-1/.\n' + \
+            u'    * http://subsrc-2/.'
+        expected2 = u'main title. K\xe4llor:\n' + \
+            u'    * http://subsrc-2/.\n' + \
+            u'    * http://subsrc-1/.'
         self.assertTrue(tf.get_text() == expected1 or tf.get_text() == expected2)
 
     def test_rdf_containers(self):
@@ -204,14 +207,16 @@ class LibCreditTests(unittest.TestCase):
 
     def test_html_rdfa(self):
         credit = load_credit('source-with-full-attrib', 'http://src/')
-        expected = unicode(open('../testcases/source-with-full-attrib.out.html').read())
+        with open('../testcases/source-with-full-attrib.out.html') as f:
+            expected = ensure_unicode(f.read())
         cf = libcredit.HTMLCreditFormatter()
         credit.format(cf, subject_uri="#xyz")
         self.assertEqual(cf.root.toxml(), expected)
 
     def test_html_elements_and_classes(self):
         credit = load_credit('source-with-full-attrib', 'http://src/')
-        expected = unicode(open('../testcases/source-with-full-attrib-custom.out.html').read())
+        with open('../testcases/source-with-full-attrib-custom.out.html') as f:
+            expected = ensure_unicode(f.read())
         cf = libcredit.HTMLCreditFormatter(
             element_overrides={'source_list': 'ol'},
             classes={'root': 'credit', 'license': 'redprint'})
