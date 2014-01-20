@@ -261,11 +261,7 @@
     describe('i18n', function() {
         var i18n, raw, data;
 
-        // We're in a unit test, so let's just use the eval() function
-        // to get the locale json.  Don't do this in live code!
-
-        raw = fs.readFileSync('locales/sv.json', 'utf-8');
-        data = eval('(' + raw + ')');
+        data = jf.readFileSync('locales/sv.json');
         i18n = new jed.Jed({
             domain: 'libcredit',
             locale_data: {
@@ -278,7 +274,7 @@
             credit.format(tf, 10, i18n);
 
             expect( tf.getText() ).to.be(
-                'a title av name of attribution (CC BY-SA 3.0 Unported). Källa:\n' +
+                'a title av name of attribution (CC BY-SA 3.0 Unported). K\xe4lla:\n' +
                     '    * subsrc title av subsrc attribution (CC BY-NC-ND 3.0 Unported).'
             );
         });
@@ -291,10 +287,10 @@
 
             var text = tf.getText();
 
-            expect( text === ('main title. Källor:\n' +
+            expect( text === ('main title. K\xe4llor:\n' +
                               '    * http://subsrc-1/.\n' +
                               '    * http://subsrc-2/.') ||
-                    text === ('main title. Källor:\n' +
+                    text === ('main title. K\xe4llor:\n' +
                               '    * http://subsrc-2/.\n' +
                               '    * http://subsrc-1/.') ).to.be.ok();
         });

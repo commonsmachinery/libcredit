@@ -27,7 +27,8 @@
 	"expect.js" : "*",
 	"serve": "*",
         "xmldom" : "*",
-	"jed" : "*"
+	"jed" : "*",
+        "jsonfile": "*"
     },
     "license": "GPLv2"
 }
