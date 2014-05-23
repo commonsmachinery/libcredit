@@ -168,6 +168,23 @@
     };
     libcredit.parseRDFXML = parseRDFXML;
 
+
+    /* parseRDFJSON(object)
+     *
+     * Parse an RDF/JSON graph into a rdflib.js Formula object.
+     *
+     * Parameters:
+     *
+     * - graph: the RDF/JSON graph as a javascript object
+     */
+    var parseRDFJSON = function(graph) {
+        var kb = new rdflib.IndexedFormula();
+        rdflib.jsonParser.parseJSON(graph, null, kb);
+        return kb;
+    };
+    libcredit.parseRDFJSON = parseRDFJSON;
+
+
     /* getLicenseName(url)
      *
      * Return a human-readable short name for a license.
@@ -859,7 +876,7 @@
     }
     else {
         if (typeof define === 'function' && define.amd) {
-            define('libcredit', ['rdflib'], function(rdflib) {
+            define(['rdflib'], function(rdflib) {
                 rdflibSetup(rdflib);
                 return libcredit;
             });

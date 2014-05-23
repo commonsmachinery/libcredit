@@ -1,3 +1,8 @@
+# 0.3
+
+* Javascript: New method parseRDFJSON
+* Javascript: fixed to work with RequireJS
+
 # 0.2 (2013-12-16)
 
 * Support RDF containers (rdf:Seq, rdf:Bag, rdf:Alt).
